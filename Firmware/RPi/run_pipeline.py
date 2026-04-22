@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import argparse
 import json
 from pathlib import Path
@@ -71,6 +72,66 @@ def blur_heads_elliptical(
     blurred = image.filter(ImageFilter.GaussianBlur(radius=blur_factor))
     result_image = Image.composite(blurred, image, mask)
     return result_image
+
+
+def parse_size_arg(s: Optional[str]) -> Optional[Tuple[int, int]]:
+    if s is None:
+        return None
+    if 'x' in s:
+        parts = s.lower().split('x')
+    elif ',' in s:
+        parts = s.split(',')
+    else:
+        raise argparse.ArgumentTypeError("output-size must be in format WIDTHxHEIGHT (z.B. 1280x720)")
+    if len(parts) != 2:
+        raise argparse.ArgumentTypeError("output-size must be in format WIDTHxHEIGHT (z.B. 1280x720)")
+    try:
+        w = int(parts[0])
+        h = int(parts[1])
+    except ValueError:
+        raise argparse.ArgumentTypeError("output-size values must be integers")
+    if w <= 0 or h <= 0:
+        raise argparse.ArgumentTypeError("output-size values must be positive")
+    return (w, h)
+
+
+def scale_boxes(
+    boxes: np.ndarray,
+    from_size: Tuple[int, int],
+    to_size: Tuple[int, int],
+    fmt: str = "yolox",
+) -> np.ndarray:
+    """
+    Scale boxes from from_size (width, height) to to_size (width, height).
+    fmt:
+      - "yolox": boxes in (top, left, bottom, right) -> scale y by scale_y, x by scale_x
+      - "head": boxes in (x1, y1, x2, y2) -> scale x by scale_x, y by scale_y
+    """
+    if boxes is None or boxes.size == 0:
+        return boxes.copy() if isinstance(boxes, np.ndarray) else np.empty((0, 4), dtype=np.float32)
+    from_w, from_h = from_size
+    to_w, to_h = to_size
+    if from_w == 0 or from_h == 0:
+        raise ValueError("from_size must be non-zero")
+    sx = to_w / float(from_w)
+    sy = to_h / float(from_h)
+    boxes = np.array(boxes, dtype=np.float32)
+    scaled = boxes.copy()
+    if fmt == "yolox":
+        # (top, left, bottom, right)
+        scaled[:, 0] = boxes[:, 0] * sy  # top -> y
+        scaled[:, 1] = boxes[:, 1] * sx  # left -> x
+        scaled[:, 2] = boxes[:, 2] * sy  # bottom -> y
+        scaled[:, 3] = boxes[:, 3] * sx  # right -> x
+    elif fmt == "head":
+        # (x1, y1, x2, y2)
+        scaled[:, 0] = boxes[:, 0] * sx
+        scaled[:, 1] = boxes[:, 1] * sy
+        scaled[:, 2] = boxes[:, 2] * sx
+        scaled[:, 3] = boxes[:, 3] * sy
+    else:
+        raise ValueError("Unknown fmt for scale_boxes")
+    return scaled
 
 
 # ---------- Weather (multilabel optional) ----------
@@ -238,6 +299,9 @@ def main():
     ap.add_argument("--head-padding", type=float, default=0.10)
     ap.add_argument("--head-blur", type=float, default=15.0)
 
+    # Ausgabeauflösung
+    ap.add_argument("--output-size", type=str, default=None, help="Zielauflösung als WIDTHxHEIGHT, z.B. 1280x720. Wenn nicht gesetzt, wird Eingabeauflösung verwendet.")
+
     # Optionen
     ap.add_argument("--disable-weather", action="store_true")
     ap.add_argument("--disable-plates", action="store_true")
@@ -251,11 +315,19 @@ def main():
     if not in_path.is_file():
         raise SystemExit(f"Eingabedatei nicht gefunden: {in_path}")
 
-    # Bild laden
+    # Bild laden (Original)
     pil = Image.open(in_path).convert("RGB")
+    orig_w, orig_h = pil.size
+
+    # Parse output size (falls angegeben)
+    out_size = parse_size_arg(args.output_size)
+    if out_size is None:
+        out_w, out_h = orig_w, orig_h
+    else:
+        out_w, out_h = out_size
 
     # ---- 1) Erkennungen (nur berechnen) ----
-    results = {"file": str(in_path), "weather": {}, "yolox": [], "heads": []}
+    results = {"file": str(in_path), "weather": {}, "yolox": [], "heads": [], "output_size": [out_w, out_h]}
 
     # Weather
     if not args.disable_weather:
@@ -290,7 +362,7 @@ def main():
                 results["yolox"].append({
                     "class": yolox.class_labels[cls_idx] if 0 <= cls_idx < len(yolox.class_labels) else f"cls_{cls_idx}",
                     "score": float(scores_out[i]),
-                    "box": [float(v) for v in box_out[i].tolist()],  # (top,left,bottom,right)
+                    "box": [float(v) for v in box_out[i].tolist()],  # (top,left,bottom,right) in original image coords
                 })
 
     # Heads
@@ -304,20 +376,38 @@ def main():
         for bi, sc in zip(head_boxes, head_scores):
             results["heads"].append({
                 "score": float(sc),
-                "box": [float(v) for v in bi.tolist()],  # [x1,y1,x2,y2]
+                "box": [float(v) for v in bi.tolist()],  # [x1,y1,x2,y2] in original image coords
             })
 
-    # ---- 2) Modifikationen ----
-    current = pil
-    if yolo_boxes_keep.size > 0:
-        current = paste_black_rects(current, yolo_boxes_keep)
-    if head_boxes.size > 0:
-        current = blur_heads_elliptical(current, head_boxes, padding_factor=args.head_padding, blur_factor=args.head_blur)
+    # ---- 2) Modifikationen auf Ausgabeauflösung ----
+    # Skaliere Boxen von Originalgröße auf Ziel-Ausgabegröße
+    yolo_boxes_scaled = np.empty((0, 4), dtype=np.float32)
+    head_boxes_scaled = np.empty((0, 4), dtype=np.float32)
+
+    if yolo_boxes_keep is not None and yolo_boxes_keep.size > 0:
+        yolo_boxes_scaled = scale_boxes(yolo_boxes_keep, (orig_w, orig_h), (out_w, out_h), fmt="yolox")
+        # ergänze scaled in JSON (paralleles Feld)
+        for i, entry in enumerate(results["yolox"]):
+            entry["box_scaled"] = [float(v) for v in yolo_boxes_scaled[i].tolist()]
+
+    if head_boxes is not None and head_boxes.size > 0:
+        head_boxes_scaled = scale_boxes(head_boxes, (orig_w, orig_h), (out_w, out_h), fmt="head")
+        # ergänze scaled in JSON
+        for i, entry in enumerate(results["heads"]):
+            entry["box_scaled"] = [float(v) for v in head_boxes_scaled[i].tolist()]
+
+    # Bild auf Ausgabegröße skalieren und Modifikationen dort anwenden
+    current = pil.resize((out_w, out_h), Image.LANCZOS)
+
+    if yolo_boxes_scaled.size > 0:
+        current = paste_black_rects(current, yolo_boxes_scaled)
+    if head_boxes_scaled.size > 0:
+        current = blur_heads_elliptical(current, head_boxes_scaled, padding_factor=args.head_padding, blur_factor=args.head_blur)
 
     # ---- 3) Ausgabe ----
     out_path.parent.mkdir(parents=True, exist_ok=True)
     current.save(out_path)
-    print(f"OK: {in_path.name} -> {out_path.name}")
+    print(f"OK: {in_path.name} -> {out_path.name} (output size: {out_w}x{out_h})")
 
     if args.save_json:
         json_path = out_path.parent / (out_path.stem + "_pipeline.json")

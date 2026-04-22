@@ -1,0 +1,99 @@
+2026-04-21 18:50:28,200 INFO: Camera closed successfully.
+2026-04-21 18:50:28,440 INFO: Image captured
+2026-04-21 18:51:06,810 INFO: Pipeline finished successfully
+2026-04-21 18:51:08,945 ERROR: Upload failed: [Errno -3] Temporary failure in name resolution
+2026-04-21 18:51:13,952 ERROR: Upload failed: [Errno -3] Temporary failure in name resolution
+2026-04-21 18:51:20,145 ERROR: Upload attempt 1 raised exception: HTTPSConnectionPool(host='emea-edu.com', port=443): Max retries exceeded with url: /camera1/upload.php (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f87f7e510>: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution'))
+2026-04-21 18:51:25,162 ERROR: Upload attempt 2 raised exception: HTTPSConnectionPool(host='emea-edu.com', port=443): Max retries exceeded with url: /camera1/upload.php (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f845832d0>: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution'))
+2026-04-21 18:51:30,163 ERROR: All HTML and FTP upload attempts failed.SHUTTING DOWN
+
+GedonSoft 2G, SP-974D66417GedonSoft
+Battery: 10.06! Safe Battery Levels are 12.6V - 9V
+2026-04-21 18:52:21,354 INFO: Connecting with Wifi
+2026-04-21 18:52:23,317 ERROR: Time sync failed: Command '['sudo', 'ntpdate', '-u', 'pool.ntp.org']' returned non-zero exit status 1.
+2026-04-21 18:52:24,980 INFO: 27.01C  42.50 %H
+2026-04-21 18:52:24,982 INFO: IR Temp:22.870000000000005
+2026-04-21 18:52:25,180 INFO: Initialization successful.
+2026-04-21 18:52:25,181 INFO: Camera now open.
+2026-04-21 18:52:25,222 INFO: Camera configuration has been adjusted!
+2026-04-21 18:52:25,232 INFO: Configuration successful!
+2026-04-21 18:52:25,374 INFO: Camera started
+2026-04-21 18:52:25,940 INFO: Camera stopped
+2026-04-21 18:52:26,370 INFO: Camera closed successfully.
+2026-04-21 18:52:26,622 INFO: Image captured
+2026-04-21 19:03:01,221 CRITICAL: Error: 'NoneType' object has no attribute 'strip'
+2026-04-21 19:06:14,970 CRITICAL: Error: 'NoneType' object has no attribute 'strip'
+None, None
+No response from ESP about Battery
+2026-04-21 19:08:55,463 INFO: Connecting with Wifi
+2026-04-21 19:08:58,395 INFO: 27.09C  42.44 %H
+2026-04-21 19:08:58,397 INFO: IR Temp:22.83000000000004
+2026-04-21 19:08:58,548 INFO: Initialization successful.
+2026-04-21 19:08:58,548 INFO: Camera now open.
+2026-04-21 19:08:58,562 INFO: Camera configuration has been adjusted!
+2026-04-21 19:08:58,572 INFO: Configuration successful!
+2026-04-21 19:08:58,679 INFO: Camera started
+2026-04-21 19:08:59,101 INFO: Camera stopped
+2026-04-21 19:08:59,511 INFO: Camera closed successfully.
+2026-04-21 19:08:59,734 INFO: Image captured
+2026-04-21 19:09:42,575 INFO: Pipeline finished successfully
+2026-04-21 19:09:45,835 INFO: FTP- Image and JSON Upload Successful on attempt 1
+2026-04-21 19:09:48,173 INFO: HTML- Image and JSON Upload successful on attempt 1!
+2026-04-21 19:09:49,325 INFO: Got Signal from ESP32 after sending Image,Uploading Logs and Going to SHUT DOWN
+2026-04-21 19:09:49,325 INFO: ===================================================================================
+
+None, None
+No response from ESP about Battery
+2026-04-21 19:15:01,515 INFO: Connecting with Wifi
+2026-04-21 19:15:04,818 INFO: 26.76C  43.03 %H
+2026-04-21 19:15:04,821 INFO: IR Temp:22.79000000000002
+2026-04-21 19:15:05,111 INFO: Initialization successful.
+2026-04-21 19:15:05,112 INFO: Camera now open.
+2026-04-21 19:15:05,132 INFO: Camera configuration has been adjusted!
+2026-04-21 19:15:05,148 INFO: Configuration successful!
+2026-04-21 19:15:05,260 INFO: Camera started
+2026-04-21 19:15:05,692 INFO: Camera stopped
+2026-04-21 19:15:06,105 INFO: Camera closed successfully.
+2026-04-21 19:15:06,313 INFO: Image captured
+GedonSoft 2G, SP-974D66417GedonSoft
+Battery: 10.03! Safe Battery Levels are 12.6V - 9V
+2026-04-21 19:19:38,065 INFO: Connecting with Wifi
+2026-04-21 19:19:39,460 ERROR: Time sync failed: Command '['sudo', 'ntpdate', '-u', 'pool.ntp.org']' returned non-zero exit status 1.
+2026-04-21 19:19:41,121 INFO: 26.83C  42.95 %H
+2026-04-21 19:19:41,123 INFO: IR Temp:22.77000000000004
+2026-04-21 19:19:41,467 INFO: Initialization successful.
+2026-04-21 19:19:41,468 INFO: Camera now open.
+2026-04-21 19:19:41,496 INFO: Camera configuration has been adjusted!
+2026-04-21 19:19:41,507 INFO: Configuration successful!
+2026-04-21 19:19:41,615 INFO: Camera started
+2026-04-21 19:19:42,077 INFO: Camera stopped
+2026-04-21 19:19:42,294 INFO: Camera closed successfully.
+GedonSoft 2G, SP-974D66417GedonSoft
+Battery: 10.00! Safe Battery Levels are 12.6V - 9V
+New GedonSoft 2G, SP-974D66417GedonSoft
+2026-04-21 19:24:07,819 INFO: Connecting with Wifi
+2026-04-21 19:24:11,565 ERROR: Time sync failed: Command '['sudo', 'ntpdate', '-u', 'pool.ntp.org']' returned non-zero exit status 1.
+2026-04-21 19:24:13,227 INFO: 27.05C  42.82 %H
+2026-04-21 19:24:13,229 INFO: IR Temp:22.910000000000025
+2026-04-21 19:24:13,509 INFO: Initialization successful.
+2026-04-21 19:24:13,510 INFO: Camera now open.
+2026-04-21 19:24:13,529 INFO: Camera configuration has been adjusted!
+2026-04-21 19:24:13,537 INFO: Configuration successful!
+2026-04-21 19:24:13,686 INFO: Camera started
+2026-04-21 19:24:14,140 INFO: Camera stopped
+2026-04-21 19:24:14,548 INFO: Camera closed successfully.
+2026-04-21 19:24:14,769 INFO: Image captured
+None, None
+No response from ESP about Battery
+New None, None
+2026-04-22 13:15:32,929 INFO: Connecting with Wifi
+2026-04-22 13:15:35,965 INFO: 25.12C  34.95 %H
+2026-04-22 13:15:35,968 INFO: IR Temp:22.710000000000036
+2026-04-22 13:15:36,169 INFO: Initialization successful.
+2026-04-22 13:15:36,175 INFO: Camera now open.
+2026-04-22 13:15:36,189 INFO: Camera configuration has been adjusted!
+2026-04-22 13:15:36,199 INFO: Configuration successful!
+2026-04-22 13:15:36,323 INFO: Camera started
+2026-04-22 13:15:36,668 INFO: Camera stopped
+2026-04-22 13:15:37,077 INFO: Camera closed successfully.
+2026-04-22 13:15:37,274 INFO: Image captured

@@ -52,15 +52,10 @@ void setup()
   Serial.begin(115200);
   Serial0.begin(9600);
 
-  startConfigPortalBlocking();
-
   pinMode(IMAGE_SENT_SIGNAL_FROM_RPI, INPUT_PULLDOWN);
   pinMode(SEND_SHUTDOWN_SIGNAL_TO_RPI, OUTPUT);
   pinMode(SHUTDOWN_COMPLETE_STATUS_FROM_RPI, INPUT_PULLDOWN);
   pinMode(RELAY_PIN, OUTPUT);
-  
-  //strip.begin();
-  //strip.show();
 
   analogReadResolution(12);
   analogSetAttenuation(ADC_11db);
@@ -150,7 +145,6 @@ void loop()
     digitalWrite(RELAY_PIN, LOW);
     delay(500);
 
-    Serial.println("ESP going to deep sleep for 10 minutes...");
     esp_sleep_enable_timer_wakeup(SLEEP_TIME);
     esp_deep_sleep_start();
   }

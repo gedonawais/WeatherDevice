@@ -24,8 +24,9 @@ float Vbat = 0.0;
 const unsigned long PI_TIMEOUT              = 8 * 60 * 1000;             // 8 mins in milliseconds
 const unsigned long WDT_TIMEOUT             = 2  * 60 * 1000;            // 2 mins in milliseconds
 const unsigned long SHUTDOWN_TIMEOUT        = 3  * 60 * 1000;            // 3 mins in milliseconds
-const unsigned long SLEEP_TIME              = 20 * 60 * 1000000;         // 20 mins in microseconds
 const unsigned long SLEEP_TIME_BATTERY_DIE  = 60 * 60 * 1000000;         // 1 hour in microseconds
+
+unsigned long SLEEP_TIME              = 20 * 60 * 1000000;              // 20 mins in microseconds, can be changed based on the battery
 
 unsigned long PiStartTime = 0;
 unsigned long shutdownStart = 0;
@@ -71,7 +72,6 @@ void setup()
   }
   else
   {
-    Serial.println("LESS");
     esp_sleep_enable_timer_wakeup(SLEEP_TIME_BATTERY_DIE);
     esp_deep_sleep_start();
   } 
@@ -145,6 +145,10 @@ void loop()
     digitalWrite(RELAY_PIN, LOW);
     delay(500);
 
+    if (Vbat<11 && Vbat>9)
+    {
+      SLEEP_TIME = 30*60*1000000;
+    }
     esp_sleep_enable_timer_wakeup(SLEEP_TIME);
     esp_deep_sleep_start();
   }

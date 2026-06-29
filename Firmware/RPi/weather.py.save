@@ -34,8 +34,7 @@ SHUTDOWN_COMPLETED = 25
 PULSE_TIME = 1
 MAX_RETRIES = 3
 RETRY_DELAY = 5 #seconds
-SSID = ""
-PW =""
+
 
 def trim_log_file(filepath, max_lines):
     try:
@@ -46,19 +45,21 @@ def trim_log_file(filepath, max_lines):
 
     # Keep only last max_lines
     lines = lines[-max_lines:]
-
+    
     # Overwrite file
     with open(filepath, "w") as f:
         f.writelines(lines)
+            
 
 
-def log_no_time(message, log_path = LOG_PATH):
+
+def log_no_time(message, log_path = "/home/gedonsoft/Weather/capture.log"):
     with open(log_path, "a") as f:
         f.write(f"{message}\n") 
 
-def get_logs(lines=40):
+def get_logs(lines=44):
     try:
-        return subprocess.check_output(["tail",f"-n{lines}",LOG_PATH]).decode("utf-8",errors="ignore")
+        return subprocess.check_output(["tail",f"-n{lines}","/home/gedonsoft/Weather/capture.log"]).decode("utf-8",errors="ignore")
     except Exception as e:
         return f"Error reading logs: {e}"
 
@@ -84,7 +85,7 @@ def uploadLogs():
             logs = get_logs()
             data = logs.encode()
             k = BytesIO(data)
-            resp = ftp.storbinary('STOR LOGS.log', k)
+            resp = ftp.storbinary('STOR capture.log', k)
             k.close()
 
             if resp.startswith('226'):
@@ -163,67 +164,64 @@ try:
         uart.send("SEND VOLTAGE")
         BatteryData = wait_for_uart(uart)
 
-        #uart.send("SEND CREDENTIALS")
-        #ssid_raw = wait_for_uart(uart)
-        #pw_raw = wait_for_uart(uart)
+        uart.send("SEND CREDENTIALS")
+        ssid_raw = wait_for_uart(uart)
+        pw_raw = wait_for_uart(uart)
 
-        #SSID = str(ssid_raw).strip()
-        #PW = str(pw_raw).strip()
+        SSID = str(ssid_raw).strip()
+        PW = str(pw_raw).strip()
 
         if BatteryData is None:
             log_no_time("No response from ESP about Battery")
             break
         else:
-            log_no_time(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
+            log_no_time(f"Battery: {BatteryData}! Safe Battery Levels are 12.6V - 9V")
             break
 
-        #if SSID is None:
-            #log_no_time("no response about credentials")
-            #break
-        #else:
-            #log_no_time("Got WiFi Credentials")
-            #break
-
+        if SSID is None:
+            log_no_time("No response about wifi credentials")
+            break
+        else:
+            log_no_time("Got crede
     uart.close()
     time.sleep(1)
 
-    ppp_process = sim_ppp.init_connection()
-    if ppp_process is None:
-        logging.error("No PPP connection. Shutting down")
-        print("PPP connection failed. Shutting Down")
-        os.system("sudo shutdown now")
-    else:
-        sync_time_after_ppp()
-
-    #try:
-        #subprocess.run(["sudo","/usr/bin/nmcli", "dev", "wifi", "connect", str(SSID), "password", str(PW)], check=True, capture_output=True)
-        #log_no_time("Connecting with Wifi")
+    #ppp_process = sim_ppp.init_connection()
+    #if ppp_process is None:
+        #logging.error("No PPP connection. Shutting down")
+        #print("PPP connection failed. Shutting Down")
+        #os.system("sudo shutdown now")
+    #else:
         #sync_time_after_ppp()
-    #except subprocess.CalledProcessError as e:
-        #logging.exception(f"Return code:{e.returncode}")
-        #logging.exception(f"STDOUT: {e.stdout}")
-        #logging.exception(f"STDERR: {e.stderr}")
 
+    try:
+        subprocess.run(["nmcli","radio","wifi","on"])
+        time.sleep(1)
+        subprocess.run(["nmcli", "dev", "wifi", "connect", str(SSID), "password", str(PW)])
+        logging.info("Connecting with Wifi")
+        sync_time_after_ppp()
+    except Exception as e:
+        logging.error(e)
 
     # Temp and Humidity
-    #try:
-        #sensor = SHT3x(bus_id=1, address=0x44)
-        #temp, hum = sensor.read_avg(samples=8, delay=0.2)
-        #logging.info (f"{temp:.2f}C  {hum:.2f} %H")
-    #except Exception as e:
-        #logging.info(f"SHT3X Error:{e}")
-        #print(f"SHT3X Error:{e}")
+    try:
+        sensor = SHT3x(bus_id=1, address=0x44)
+        temp, hum = sensor.read_avg(samples=8, delay=0.2)
+        logging.info (f"{temp:.2f}C  {hum:.2f} %H")
+    except Exception as e:
+        logging.info(f"SHT3X Error:{e}")
+        print(f"SHT3X Error:{e}")
         
     # IR Temperature
-    #try:
-        #sensor = MLX90614()
-        #IR_Temp = str(sensor.readObjectTemperature())
-        #logging.info(f"IR Temp:{sensor.readObjectTemperature()}")
-        #print(IR_Temp)
+    try:
+        sensor = MLX90614()
+        IR_Temp = str(sensor.readObjectTemperature())
+        logging.info(f"IR Temp:{sensor.readObjectTemperature()}")
+        print(IR_Temp)
         
-    #except Exception as e:
-        #logging.info(f"IR Temp Error:{e}")
-        #print (e)
+    except Exception as e:
+        logging.info(f"IR Temp Error:{e}")
+        print (e)
 
         
         
@@ -263,6 +261,9 @@ try:
             data = json.load(f)
 
         data["Parameters"] = {
+            "Temp": temp,
+            "Humidity": hum,
+            "IR_Temp": IR_Temp,
             "Charging": BatteryData
         }
 
@@ -288,8 +289,8 @@ try:
                 resp1 = ftp.storbinary(f'STOR images/{nameImage}', f)
             with open('/home/gedonsoft/Weather/out_pipeline.json', 'rb') as j:
                 resp2 = ftp.storbinary(f'STOR json/{json}', j)
-            with open(LOG_PATH, 'rb') as k:
-                resp3 = ftp.storbinary('STOR LOGS.log', k)
+            with open('/home/gedonsoft/Weather/capture.log', 'rb') as k:
+                resp3 = ftp.storbinary('STOR capture.log', k)
 
 
             # FTP returns a text message — '226 Transfer complete' means success

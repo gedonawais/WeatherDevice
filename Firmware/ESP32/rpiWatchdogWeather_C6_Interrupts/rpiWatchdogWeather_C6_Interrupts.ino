@@ -26,13 +26,13 @@ const unsigned long WDT_TIMEOUT             = 2  * 60 * 1000;            // 2 mi
 const unsigned long SHUTDOWN_TIMEOUT        = 3  * 60 * 1000;            // 3 mins in milliseconds
 const unsigned long SLEEP_TIME_BATTERY_DIE  = 60 * 60 * 1000000;         // 1 hour in microseconds
 
-unsigned long SLEEP_TIME              = 20 * 60 * 1000000;              // 20 mins in microseconds, can be changed based on the battery
+unsigned long SLEEP_TIME                    = 2 * 60 * 1000000;          // 20 mins in microseconds, can be changed based on the battery
 
 unsigned long PiStartTime = 0;
 unsigned long shutdownStart = 0;
 
 
-//Adafruit_NeoPixel strip(1, 8, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip(1, 8, NEO_GRB + NEO_KHZ800);
 
 volatile bool imageSentFlag = false;
 void IRAM_ATTR imageSentISR() 
@@ -46,10 +46,16 @@ esp_task_wdt_config_t config =
   .trigger_panic = true,
 };
 
-
+void setGreen()
+{
+  strip.show();
+  strip.setPixelColor(0, strip.Color(255, 0, 0)); // Green
+  strip.show();
+}
 
 void setup() 
 {
+  strip.begin();
   Serial.begin(115200);
   Serial0.begin(9600);
 
@@ -147,7 +153,8 @@ void loop()
 
     if (Vbat<11 && Vbat>9)
     {
-      SLEEP_TIME = 30*60*1000000;
+      setGreen();
+      SLEEP_TIME = 5*60*1000000;
     }
     esp_sleep_enable_timer_wakeup(SLEEP_TIME);
     esp_deep_sleep_start();

@@ -2,37 +2,24 @@
 #include "esp_sleep.h"
 #include "esp_task_wdt.h"
 
-
 #define IMAGE_SENT_SIGNAL_FROM_RPI          0   // GPIO23 on RPi
 #define SEND_SHUTDOWN_SIGNAL_TO_RPI         1   // GPIO24 on RPi
 #define SHUTDOWN_COMPLETE_STATUS_FROM_RPI   2   // GPIO25 on RPi
-#define RELAY_PIN                           3   // CH1 of Relay
+#define RPI_ENABLE                          14  // To enable power for RPi
 
 
-const int adcPin = 5;
-// Measured voltage divider resistors
-const float R1 = 9820.0;
-const float R2 = 3630.0;
-
-// Calibration point (measured with multimeter)
-const int ADC_CALIB = 3366;
-const float V_CALIB = 3.37;
-const int NUM_SAMPLES = 10;  // number of ADC samples to average
-float slope = V_CALIB / ADC_CALIB;  // ADC to voltage scale factor
-float Vbat = 0.0;
+// Battery Monitoring
+const int BATTERY_PIN = 5;  
 
 const unsigned long PI_TIMEOUT              = 8 * 60 * 1000;             // 8 mins in milliseconds
 const unsigned long WDT_TIMEOUT             = 2  * 60 * 1000;            // 2 mins in milliseconds
 const unsigned long SHUTDOWN_TIMEOUT        = 3  * 60 * 1000;            // 3 mins in milliseconds
+const unsigned long SLEEP_TIME              = 20 * 60 * 1000000;         // 20 mins in microseconds
 const unsigned long SLEEP_TIME_BATTERY_DIE  = 60 * 60 * 1000000;         // 1 hour in microseconds
-
-unsigned long SLEEP_TIME                    = 2 * 60 * 1000000;          // 20 mins in microseconds, can be changed based on the battery
 
 unsigned long PiStartTime = 0;
 unsigned long shutdownStart = 0;
 
-
-Adafruit_NeoPixel strip(1, 8, NEO_GRB + NEO_KHZ800);
 
 volatile bool imageSentFlag = false;
 void IRAM_ATTR imageSentISR() 
@@ -46,35 +33,29 @@ esp_task_wdt_config_t config =
   .trigger_panic = true,
 };
 
-void setGreen()
-{
-  strip.show();
-  strip.setPixelColor(0, strip.Color(255, 0, 0)); // Green
-  strip.show();
-}
 
 void setup() 
 {
-  strip.begin();
   Serial.begin(115200);
   Serial0.begin(9600);
 
   pinMode(IMAGE_SENT_SIGNAL_FROM_RPI, INPUT_PULLDOWN);
   pinMode(SEND_SHUTDOWN_SIGNAL_TO_RPI, OUTPUT);
   pinMode(SHUTDOWN_COMPLETE_STATUS_FROM_RPI, INPUT_PULLDOWN);
-  pinMode(RELAY_PIN, OUTPUT);
-
+  pinMode(RPI_ENABLE, OUTPUT);
+  
   analogReadResolution(12);
-  analogSetAttenuation(ADC_11db);
-
-  Vbat = readBatteryVoltage();
-  delay(1000);
+  float raw = readBatteryRaw();
+  float Vbat = (0.005806 * raw) - 5.262;
+  Serial.print("  Battery Voltage = ");
+  Serial.print(Vbat, 2);
+  Serial.println(" V");
 
   if (Vbat >= 9)
   {
-    digitalWrite(RELAY_PIN, LOW);
+    digitalWrite(RPI_ENABLE, LOW);
     delay(2000);
-    digitalWrite(RELAY_PIN, HIGH);
+    digitalWrite(RPI_ENABLE, HIGH);
   }
   else
   {
@@ -148,14 +129,10 @@ void loop()
     digitalWrite(SEND_SHUTDOWN_SIGNAL_TO_RPI, LOW);
     delay(500);
 
-    digitalWrite(RELAY_PIN, LOW);
+    digitalWrite(RPI_ENABLE, LOW);
     delay(500);
 
-    if (Vbat<11 && Vbat>9)
-    {
-      setGreen();
-      SLEEP_TIME = 5*60*1000000;
-    }
+    Serial.println("ESP going to deep sleep for 10 minutes...");
     esp_sleep_enable_timer_wakeup(SLEEP_TIME);
     esp_deep_sleep_start();
   }
@@ -168,9 +145,9 @@ void checkPiTimeout()
   if (millis() - PiStartTime > PI_TIMEOUT) 
   {
       Serial.println("Pi timeout! Power cycling...");
-      digitalWrite(RELAY_PIN, LOW);
+      digitalWrite(RPI_ENABLE, LOW);
       delay(2000);
-      digitalWrite(RELAY_PIN, HIGH);
+      digitalWrite(RPI_ENABLE, HIGH);
       delay(2000);
 
       PiStartTime = millis();
@@ -178,25 +155,21 @@ void checkPiTimeout()
 }
 
 
+float readBatteryRaw() 
+{
+  long total = 0;
+  const int samples = 100;
+
+  for (int i = 0; i < samples; i++) {
+    total += analogRead(BATTERY_PIN);
+    delay(2);
+  }
+
+  return total / (float)samples;
+}
 
 float readBatteryVoltage() 
 {
-  long sum = 0;
-  for (int i = 0; i < NUM_SAMPLES; i++) {
-    sum += analogRead(adcPin);
-    delay(5); // small delay between samples
-  }
-  float adcAverage = sum / (float)NUM_SAMPLES;
-
-  // Voltage at ADC pin
-  float voltageAtPin = adcAverage * slope;
-
-  // Calculate actual battery voltage
-  float batteryVoltage = voltageAtPin * ((R1 + R2) / R2);
-
-  return batteryVoltage;
+  float raw = readBatteryRaw();
+  return (0.005806 * raw) - 5.262;
 }
-
-
-
-

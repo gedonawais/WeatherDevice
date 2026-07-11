@@ -11,11 +11,11 @@
 // Battery Monitoring
 const int BATTERY_PIN = 5;  
 
-const unsigned long PI_TIMEOUT              = 8 * 60 * 1000;             // 8 mins in milliseconds
-const unsigned long WDT_TIMEOUT             = 2  * 60 * 1000;            // 2 mins in milliseconds
-const unsigned long SHUTDOWN_TIMEOUT        = 3  * 60 * 1000;            // 3 mins in milliseconds
-const unsigned long SLEEP_TIME              = 20 * 60 * 1000000;         // 20 mins in microseconds
-const unsigned long SLEEP_TIME_BATTERY_DIE  = 60 * 60 * 1000000;         // 1 hour in microseconds
+const uint64_t PI_TIMEOUT              = 8ULL * 60 * 1000;          
+const uint64_t WDT_TIMEOUT             = 2ULL * 60 * 1000;          
+const uint64_t SHUTDOWN_TIMEOUT        = 3ULL * 60 * 1000;          
+const uint64_t SLEEP_TIME              = 20ULL * 60 * 1000000;      
+const uint64_t SLEEP_TIME_BATTERY_DIE  = 60ULL * 60 * 1000000;      
 
 unsigned long PiStartTime = 0;
 unsigned long shutdownStart = 0;

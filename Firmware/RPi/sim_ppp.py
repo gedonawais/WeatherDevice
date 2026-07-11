@@ -7,6 +7,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 PWRKEY_PIN = 17
+REG_PIN = 27
 SERIAL_PORT = "/dev/serial0"
 BAUDRATE = 115200
 MAX_PPP_RETRIES = 3
@@ -20,7 +21,11 @@ def log_no_time(message, log_path = "/home/gedonsoft/Weather/capture.log"):
 def power_on_sim():
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(PWRKEY_PIN, GPIO.OUT)
-    print("Powering on SIM7070")
+    GPIO.setup(REG_PIN, GPIO.OUT)
+    print("Turning on Regulator")
+    GPIO.output(REG_PIN,GPIO.HIGH)
+    time.sleep(1)
+    print("Turning SIM7070 on")
     GPIO.output(PWRKEY_PIN, GPIO.HIGH)
     time.sleep(1)
     GPIO.output(PWRKEY_PIN, GPIO.LOW)

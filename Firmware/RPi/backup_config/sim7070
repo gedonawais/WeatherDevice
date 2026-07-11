@@ -1,0 +1,6 @@
+/dev/serial0 115200
+connect "/usr/sbin/chat -v -f /etc/chatscripts/sim7070.chat"
+noauth
+defaultroute
+usepeerdns
+persist

@@ -1,3 +1,4 @@
+#testing
 from picamera2 import Picamera2
 from PIL import Image
 import requests
@@ -163,12 +164,6 @@ try:
         uart.send("SEND VOLTAGE")
         BatteryData = wait_for_uart(uart)
 
-        #uart.send("SEND CREDENTIALS")
-        #ssid_raw = wait_for_uart(uart)
-        #pw_raw = wait_for_uart(uart)
-
-        #SSID = str(ssid_raw).strip()
-        #PW = str(pw_raw).strip()
 
         if BatteryData is None:
             log_no_time("No response from ESP about Battery")
@@ -176,13 +171,6 @@ try:
         else:
             log_no_time(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
             break
-
-        #if SSID is None:
-            #log_no_time("no response about credentials")
-            #break
-        #else:
-            #log_no_time("Got WiFi Credentials")
-            #break
 
     uart.close()
     time.sleep(1)
@@ -195,15 +183,6 @@ try:
     else:
         sync_time_after_ppp()
 
-    #try:
-        #subprocess.run(["sudo","/usr/bin/nmcli", "dev", "wifi", "connect", str(SSID), "password", str(PW)], check=True, capture_output=True)
-        #log_no_time("Connecting with Wifi")
-        #sync_time_after_ppp()
-    #except subprocess.CalledProcessError as e:
-        #logging.exception(f"Return code:{e.returncode}")
-        #logging.exception(f"STDOUT: {e.stdout}")
-        #logging.exception(f"STDERR: {e.stderr}")
-
 
     # Temp and Humidity
     #try:
@@ -213,20 +192,19 @@ try:
     #except Exception as e:
         #logging.info(f"SHT3X Error:{e}")
         #print(f"SHT3X Error:{e}")
-        
+
     # IR Temperature
     #try:
         #sensor = MLX90614()
         #IR_Temp = str(sensor.readObjectTemperature())
         #logging.info(f"IR Temp:{sensor.readObjectTemperature()}")
         #print(IR_Temp)
-        
+
     #except Exception as e:
         #logging.info(f"IR Temp Error:{e}")
         #print (e)
 
-        
-        
+
     # Capture image
     try:
         picam2 = Picamera2()
@@ -389,30 +367,6 @@ except Exception as e:
     print (e)
     logging.critical(f"Error: {e}")
     os.system("sudo shutdown now")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

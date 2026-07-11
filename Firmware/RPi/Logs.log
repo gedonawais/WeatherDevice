@@ -1,0 +1,86 @@
+2026-06-08 18:06:34,798 INFO: Camera now open.
+2026-06-08 18:06:34,812 INFO: Camera configuration has been adjusted!
+2026-06-08 18:06:34,828 INFO: Configuration successful!
+2026-06-08 18:06:34,950 INFO: Camera started
+2026-06-08 18:06:35,354 INFO: Camera stopped
+2026-06-08 18:06:35,763 INFO: Camera closed successfully.
+2026-06-08 18:06:35,966 INFO: Image captured
+2026-06-08 18:07:14,599 INFO: Pipeline finished successfully
+2026-06-08 18:07:36,017 INFO: FTP- Image and JSON Upload Successful on attempt 1
+2026-06-08 18:07:52,385 INFO: HTML- Image and JSON Upload successful on attempt 1!
+2026-06-08 18:07:53,543 INFO: Got Signal from ESP32 after sending Image,Uploading Logs and Going to SHUT DOWN
+2026-06-08 18:07:53,544 INFO: ===================================================================================
+
+Battery: 12.15! Safe Battery Levels are 13V - 9V
+2026-06-08 18:12:10,487 INFO: Initialization successful.
+2026-06-08 18:12:10,491 INFO: Camera now open.
+2026-06-08 18:12:10,522 INFO: Camera configuration has been adjusted!
+2026-06-08 18:12:10,527 INFO: Configuration successful!
+2026-06-08 18:12:10,661 INFO: Camera started
+2026-06-08 18:12:11,155 INFO: Camera stopped
+2026-06-08 18:12:11,578 INFO: Camera closed successfully.
+2026-06-08 18:12:11,821 INFO: Image captured
+2026-06-08 18:12:52,545 INFO: Pipeline finished successfully
+2026-06-08 18:13:22,936 INFO: FTP- Image and JSON Upload Successful on attempt 1
+2026-06-08 18:13:35,674 INFO: HTML- Image and JSON Upload successful on attempt 1!
+2026-06-08 18:13:36,816 INFO: Got Signal from ESP32 after sending Image,Uploading Logs and Going to SHUT DOWN
+2026-06-08 18:13:36,817 INFO: ===================================================================================
+
+
+Battery: 12.16! Safe Battery Levels are 13V - 9V
+2026-06-08 18:18:33,416 INFO: Initialization successful.
+2026-06-08 18:18:33,417 INFO: Camera now open.
+2026-06-08 18:18:33,437 INFO: Camera configuration has been adjusted!
+2026-06-08 18:18:33,443 INFO: Configuration successful!
+2026-06-08 18:18:33,604 INFO: Camera started
+2026-06-08 18:18:34,093 INFO: Camera stopped
+2026-06-08 18:18:34,503 INFO: Camera closed successfully.
+2026-06-08 18:18:34,733 INFO: Image captured
+2026-06-08 18:19:06,812 INFO: Pipeline finished successfully
+2026-06-08 18:19:30,229 INFO: FTP- Image and JSON Upload Successful on attempt 1
+2026-06-08 18:19:44,833 INFO: HTML- Image and JSON Upload successful on attempt 1!
+2026-06-08 18:19:45,964 INFO: Got Signal from ESP32 after sending Image,Uploading Logs and Going to SHUT DOWN
+2026-06-08 18:19:45,965 INFO: ===================================================================================
+
+2026-06-08 18:06:35,354 INFO: Camera stopped
+2026-06-08 18:06:35,763 INFO: Camera closed successfully.
+2026-06-08 18:06:35,966 INFO: Image captured
+2026-06-08 18:07:14,599 INFO: Pipeline finished successfully
+2026-06-08 18:07:36,017 INFO: FTP- Image and JSON Upload Successful on attempt 1
+2026-06-08 18:07:52,385 INFO: HTML- Image and JSON Upload successful on attempt 1!
+2026-06-08 18:07:53,543 INFO: Got Signal from ESP32 after sending Image,Uploading Logs and Going to SHUT DOWN
+2026-06-08 18:07:53,544 INFO: ===================================================================================
+
+Battery: 12.15! Safe Battery Levels are 13V - 9V
+2026-06-08 18:12:10,487 INFO: Initialization successful.
+2026-06-08 18:12:10,491 INFO: Camera now open.
+2026-06-08 18:12:10,522 INFO: Camera configuration has been adjusted!
+2026-06-08 18:12:10,527 INFO: Configuration successful!
+2026-06-08 18:12:10,661 INFO: Camera started
+2026-06-08 18:12:11,155 INFO: Camera stopped
+2026-06-08 18:12:11,578 INFO: Camera closed successfully.
+2026-06-08 18:12:11,821 INFO: Image captured
+2026-06-08 18:12:52,545 INFO: Pipeline finished successfully
+2026-06-08 18:13:22,936 INFO: FTP- Image and JSON Upload Successful on attempt 1
+2026-06-08 18:13:35,674 INFO: HTML- Image and JSON Upload successful on attempt 1!
+2026-06-08 18:13:36,816 INFO: Got Signal from ESP32 after sending Image,Uploading Logs and Going to SHUT DOWN
+2026-06-08 18:13:36,817 INFO: ===================================================================================
+
+
+Battery: 12.16! Safe Battery Levels are 13V - 9V
+2026-06-08 18:18:33,416 INFO: Initialization successful.
+2026-06-08 18:18:33,417 INFO: Camera now open.
+2026-06-08 18:18:33,437 INFO: Camera configuration has been adjusted!
+2026-06-08 18:18:33,443 INFO: Configuration successful!
+2026-06-08 18:18:33,604 INFO: Camera started
+2026-06-08 18:18:34,093 INFO: Camera stopped
+2026-06-08 18:18:34,503 INFO: Camera closed successfully.
+2026-06-08 18:18:34,733 INFO: Image captured
+2026-06-08 18:19:06,812 INFO: Pipeline finished successfully
+2026-06-08 18:19:30,229 INFO: FTP- Image and JSON Upload Successful on attempt 1
+2026-06-08 18:19:44,833 INFO: HTML- Image and JSON Upload successful on attempt 1!
+2026-06-08 18:19:45,964 INFO: Got Signal from ESP32 after sending Image,Uploading Logs and Going to SHUT DOWN
+2026-06-08 18:19:45,965 INFO: ===================================================================================
+
+
+Battery: 12.15! Safe Battery Levels are 13V - 9V

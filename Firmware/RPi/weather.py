@@ -19,15 +19,15 @@ from io import BytesIO
 from sht3x import SHT3x
 from mlx90614 import *
 
-LOG_PATH = "/home/gedonsoft/Weather/capture.log"
-IMAGE_PATH = "/home/gedonsoft/Weather/picture.jpg"
-UPLOAD_IMAGE_PATH = "/home/gedonsoft/Weather/out.jpg"
+LOG_PATH = "/home/gedonsoft/WeatherDevice/Firmware/RPi/Logs/capture.log"
+IMAGE_PATH = "/home/gedonsoft/WeatherDevice/Firmware/RPi/Images/picture.jpg"
+UPLOAD_IMAGE_PATH = "/home/gedonsoft/WeatherDevice/Firmware/RPi/Images/out.jpg"
 UPLOAD_URL = "https://emea-edu.com/camera1/upload.php"
 FTP_DIR = "ftp.metops.net"
 FTP_USER = "gedonsoft"
 FTP_PWD = "loHtWAkvpDjEC47RzmhjC"
 FTP_FOLDER = "upload/camera1"
-file_path = "/home/gedonsoft/Weather/out_pipeline.json"
+file_path = "/home/gedonsoft/WeatherDevice/Firmware/RPi/out_pipeline.json"
 
 SIGNAL_TO_ESP32 = 23
 SHUTDOWN_FROM_ESP32 = 24

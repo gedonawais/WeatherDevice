@@ -6,8 +6,8 @@ from urllib.parse import urlparse
 import requests
 
 VERSION_JSON_URL = "https://emea-edu.com/camera1/Scripts/versionControl.json"
-LOCAL_SCRIPT_PATH = "/home/gedonsoft/Weather/weather.py"      
-LOCAL_VERSION_FILE = "/home/gedonsoft/Weather/current_version.txt"
+LOCAL_SCRIPT_PATH = "/home/gedonsoft/WeatherDevice/Firmware/RPi/weather.py"      
+LOCAL_VERSION_FILE = "/home/gedonsoft/WeatherDevice/Firmware/RPi/current_version.txt"
 TIMEOUT = 15
 
 def parse_version(v):

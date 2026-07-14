@@ -1,0 +1,1 @@
+python run_pipeline.py --input test.jpg --output result.jpg --benchmark

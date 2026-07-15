@@ -4,9 +4,8 @@ After=NetworkManager.service network-online.target
 Wants=network-online.target
 
 [Service]
-#ExecStartPre=/usr/bin/python3 /home/gedonsoft/Weather/OTA.py
-ExecStart=/usr/bin/python3 /home/gedonsoft/Weather/weather.py
-WorkingDirectory=/home/gedonsoft
+ExecStart=/usr/bin/python3 /home/WeatherDevice/Firmware/RPi/weather.py
+WorkingDirectory=/home
 StandardOutput=journal
 StandardError=journal
 Restart=always

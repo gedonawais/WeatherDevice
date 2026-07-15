@@ -63,6 +63,12 @@ def get_logs(lines=40):
 
 def sync_time_after_ppp():
     try:
+        # Bookworm: systemd-resolved manages resolv.conf and may override pppd's
+        # usepeerdns. Write Google DNS directly so name resolution works over PPP.
+        subprocess.run(
+            ["sudo", "bash", "-c", "echo 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > /etc/resolv.conf"],
+            check=True
+        )
         subprocess.run(["sudo", "chronyc", "makestep"], check=True)
     except Exception as e:
         logging.error(f"Time sync failed: {e}")

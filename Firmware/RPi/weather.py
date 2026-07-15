@@ -61,23 +61,8 @@ def get_logs(lines=40):
         return f"Error reading logs: {e}"
 
 
-def refresh_dns():
-    # Safety net: re-write Google DNS in case /etc/resolv.conf was modified.
-    # Primary fix is deploy_config.sh making /etc/resolv.conf immutable with
-    # usepeerdns removed from the pppd peer config.
-    try:
-        subprocess.run(
-            ["sudo", "bash", "-c", "echo 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > /etc/resolv.conf"],
-            check=True
-        )
-    except Exception as e:
-        logging.error(f"DNS refresh failed: {e}")
-
-
 def sync_time_after_ppp():
     try:
-        time.sleep(2)  # allow pppd to finish writing usepeerdns entries first
-        refresh_dns()
         subprocess.run(["sudo", "chronyc", "makestep"], check=True)
     except Exception as e:
         logging.error(f"Time sync failed: {e}")
@@ -85,10 +70,6 @@ def sync_time_after_ppp():
 
 
 def uploadLogs():
-    # Re-apply DNS — resolv.conf may have been reset by systemd-resolved
-    # by the time this is called (after waiting for the ESP32 shutdown signal).
-    refresh_dns()
-
     #Upload to FTP with retries
     FTP_success = False
     for attempt in range(1, MAX_RETRIES):
@@ -268,7 +249,6 @@ try:
         print (e)
         
     #Uploading FTP
-    refresh_dns()
     FTP_success = False
     nameImage = f"Image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
     json_name = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"

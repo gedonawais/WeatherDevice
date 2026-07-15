@@ -1,1 +1,0 @@
-pip install tflite-runtime pillow numpy

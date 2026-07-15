@@ -272,6 +272,7 @@ sudo systemctl restart weather.service
 To update the Weather Device software:
 
 ```bash
+sudo nmcli radio wifi on
 cd /home/WeatherDevice
 ```
 
@@ -279,6 +280,7 @@ Download the latest changes:
 
 ```bash
 git pull
+sudo nmcli radio wifi off
 ```
 
 Restart the service:

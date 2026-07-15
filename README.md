@@ -279,7 +279,7 @@ cd /home/WeatherDevice
 Download the latest changes:
 
 ```bash
-git pull
+sudo git pull
 sudo nmcli radio wifi off
 ```
 

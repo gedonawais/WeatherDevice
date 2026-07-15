@@ -10,9 +10,9 @@ sudo apt install -y \
     python3-libcamera \
     python3-pip \
     python3-dev \
-    libatlas-base-dev \
+    libatlas3-base \
     ppp \
-    ntpdate \
+    chrony \
     net-tools \
     libopencv-dev
 

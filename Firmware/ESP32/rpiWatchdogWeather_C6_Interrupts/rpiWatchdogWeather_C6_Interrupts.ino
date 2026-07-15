@@ -11,7 +11,7 @@
 // Battery Monitoring
 const int BATTERY_PIN = 5;  
 
-const uint64_t PI_TIMEOUT              = 60ULL * 60 * 1000;          
+const uint64_t PI_TIMEOUT              = 8ULL * 60 * 1000;          
 const uint64_t WDT_TIMEOUT             = 2ULL * 60 * 1000;          
 const uint64_t SHUTDOWN_TIMEOUT        = 3ULL * 60 * 1000;          
 const uint64_t SLEEP_TIME              = 20ULL * 60 * 1000000;      

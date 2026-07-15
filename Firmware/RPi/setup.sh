@@ -223,7 +223,6 @@ info "Installing Python packages via pip …"
 PIP_PACKAGES=(
     "onnxruntime>=1.16.0"   # ML inference engine (no apt package)
     "pyserial>=3.5"         # Serial port access
-    "smbus2>=0.4"           # I2C via SMBus
     "spidev>=3.5"           # SPI access
     "picamera2>=0.3"        # Camera (fallback if apt version unavailable)
     "RPi.GPIO>=0.7"         # GPIO (fallback if apt version unavailable)

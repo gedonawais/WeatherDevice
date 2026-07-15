@@ -13,35 +13,41 @@ echo "Config source: $CONFIG_DIR"
 echo ""
 
 # ── 1. RPi boot config ──────────────────────────────────────────────────────
-echo "[1/5] Copying boot config..."
+echo "[1/6] Copying boot config..."
 sudo cp "$CONFIG_DIR/config.txt" /boot/firmware/config.txt
 echo "      -> /boot/firmware/config.txt"
 
 # ── 2. PPP peer config (SIM7070 modem) ──────────────────────────────────────
-echo "[2/5] Copying PPP peer config..."
+echo "[2/6] Copying PPP peer config..."
 sudo mkdir -p /etc/ppp/peers
 sudo cp "$CONFIG_DIR/sim7070" /etc/ppp/peers/sim7070
 echo "      -> /etc/ppp/peers/sim7070"
 
 # ── 3. PPP chat script ───────────────────────────────────────────────────────
-echo "[3/5] Copying PPP chat script..."
+echo "[3/6] Copying PPP chat script..."
 sudo mkdir -p /etc/chatscripts
 sudo cp "$CONFIG_DIR/sim7070.chat" /etc/chatscripts/sim7070.chat
 echo "      -> /etc/chatscripts/sim7070.chat"
 
 # ── 4. Systemd weather service ───────────────────────────────────────────────
-echo "[4/5] Installing weather systemd service..."
+echo "[4/6] Installing weather systemd service..."
 sudo cp "$CONFIG_DIR/weather.service" /etc/systemd/system/weather.service
 sudo systemctl daemon-reload
 sudo systemctl enable weather.service
 echo "      -> /etc/systemd/system/weather.service (enabled)"
 
 # ── 5. Create required directories ───────────────────────────────────────────
-echo "[5/5] Creating required runtime directories..."
+echo "[5/6] Creating required runtime directories..."
 sudo mkdir -p /home/WeatherDevice/Firmware/RPi/Logs
 sudo mkdir -p /home/WeatherDevice/Firmware/RPi/Images
 echo "      -> /home/WeatherDevice/Firmware/RPi/Logs"
 echo "      -> /home/WeatherDevice/Firmware/RPi/Images"
+
+# ── 6. Disable serial console, enable hardware UART ─────────────────────────
+echo "[6/6] Configuring serial port (disable console, enable hardware UART)..."
+sudo raspi-config nonint do_serial_hw 0    # enable hardware serial port
+sudo raspi-config nonint do_serial_cons 1  # disable login shell over serial
+echo "      -> Serial console disabled, hardware UART enabled"
 
 echo ""
 echo "=== Done! ==="

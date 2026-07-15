@@ -17,6 +17,6 @@ sudo apt install -y \
     libopencv-dev
 
 echo "=== Installing pip packages ==="
-pip install --break-system-packages -r "$(dirname "$0")/requirements.txt"
+sudo pip install --break-system-packages -r "$(dirname "$0")/requirements.txt"
 
 echo "=== Done! All dependencies installed ==="

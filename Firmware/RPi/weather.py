@@ -359,7 +359,7 @@ try:
     while True:
         if GPIO.input(SHUTDOWN_FROM_ESP32) == GPIO.HIGH:
             time.sleep(1)
-            print("Got signal from ESP32 for shutdown")
+            print(""Got Signal from ESP32 after sending Image,Uploading Logs and Going to SHUT DOWN")
             logging.info("Got Signal from ESP32 after sending Image,Uploading Logs and Going to SHUT DOWN")
             logging.info("===================================================================================\n")
             uploadLogs()

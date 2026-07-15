@@ -1,0 +1,53 @@
+#!/bin/bash
+# deploy_config.sh
+# Copies WeatherDevice config files to the correct system locations on a fresh RPi OS.
+# Run from the repo root: bash Firmware/RPi/deploy_config.sh
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+CONFIG_DIR="$SCRIPT_DIR/backup_config"
+
+echo "=== WeatherDevice - Deploy Config ==="
+echo "Config source: $CONFIG_DIR"
+echo ""
+
+# ── 1. RPi boot config ──────────────────────────────────────────────────────
+echo "[1/5] Copying boot config..."
+sudo cp "$CONFIG_DIR/config.txt" /boot/firmware/config.txt
+echo "      -> /boot/firmware/config.txt"
+
+# ── 2. PPP peer config (SIM7070 modem) ──────────────────────────────────────
+echo "[2/5] Copying PPP peer config..."
+sudo mkdir -p /etc/ppp/peers
+sudo cp "$CONFIG_DIR/sim7070" /etc/ppp/peers/sim7070
+echo "      -> /etc/ppp/peers/sim7070"
+
+# ── 3. PPP chat script ───────────────────────────────────────────────────────
+echo "[3/5] Copying PPP chat script..."
+sudo mkdir -p /etc/chatscripts
+sudo cp "$CONFIG_DIR/sim7070.chat" /etc/chatscripts/sim7070.chat
+echo "      -> /etc/chatscripts/sim7070.chat"
+
+# ── 4. Systemd weather service ───────────────────────────────────────────────
+echo "[4/5] Installing weather systemd service..."
+sudo cp "$CONFIG_DIR/weather.service" /etc/systemd/system/weather.service
+sudo systemctl daemon-reload
+sudo systemctl enable weather.service
+echo "      -> /etc/systemd/system/weather.service (enabled)"
+
+# ── 5. Create required directories ───────────────────────────────────────────
+echo "[5/5] Creating required runtime directories..."
+sudo mkdir -p /home/WeatherDevice/Firmware/RPi/Logs
+sudo mkdir -p /home/WeatherDevice/Firmware/RPi/Images
+echo "      -> /home/WeatherDevice/Firmware/RPi/Logs"
+echo "      -> /home/WeatherDevice/Firmware/RPi/Images"
+
+echo ""
+echo "=== Done! ==="
+echo ""
+echo "Next steps:"
+echo "  1. Reboot for boot config changes to take effect: sudo reboot"
+echo "  2. After reboot, install dependencies:           bash $SCRIPT_DIR/install.sh"
+echo "  3. Start the weather service manually to test:   sudo systemctl start weather.service"
+echo "  4. Check service logs:                           journalctl -u weather.service -f"

@@ -76,6 +76,16 @@ def sync_time_after_ppp():
 
 
 def uploadLogs():
+    # Re-apply DNS — resolv.conf may have been reset by systemd-resolved
+    # by the time this is called (after waiting for the ESP32 shutdown signal).
+    try:
+        subprocess.run(
+            ["sudo", "bash", "-c", "echo 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > /etc/resolv.conf"],
+            check=True
+        )
+    except Exception as e:
+        logging.error(f"DNS refresh failed in uploadLogs: {e}")
+
     #Upload to FTP with retries
     FTP_success = False
     for attempt in range(1, MAX_RETRIES):

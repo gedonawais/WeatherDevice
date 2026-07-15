@@ -164,6 +164,7 @@ def wait_for_uart(uart, timeout=5):
 # --- Pi + upload + GPIO setup + UART Battery Monitoring ---
 
 logging.basicConfig (filename=LOG_PATH, level= logging.INFO, format="%(asctime)s %(levelname)s: %(message)s", force=True, filemode='a')
+logging.Formatter.converter = time.localtime
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(SIGNAL_TO_ESP32, GPIO.OUT, initial=GPIO.LOW)
@@ -305,39 +306,6 @@ try:
         if attempt < MAX_RETRIES:
             time.sleep(RETRY_DELAY)
 
-    # ── Upload logs (separate session to avoid server connection reset) ───────
-    for attempt in range(1, MAX_RETRIES):
-        try:
-            ftp = FTP(FTP_DIR)
-            ftp.login(FTP_USER, FTP_PWD)
-            ftp.set_pasv(True)
-            ftp.cwd(FTP_FOLDER)
-
-            with open(LOG_PATH, 'rb') as k:
-                resp3 = ftp.storbinary('STOR LOGS.log', k)
-
-            if resp3.startswith('226'):
-                print(f"FTP- Logs Upload Successful on attempt {attempt}")
-                logging.info(f"FTP- Logs Upload Successful on attempt {attempt}")
-                break
-            else:
-                print("Unexpected FTP response for logs")
-                logging.error(f"Unexpected FTP response for logs: {resp3}")
-
-        except error_perm as e:
-            print("Permission or FTP error (logs)")
-            logging.error(f"Permission or FTP error (logs): {e}")
-        except Exception as e:
-            print(f"Log Upload Failed {e}")
-            logging.error(f"Log upload failed: {e}")
-        finally:
-            try:
-                ftp.quit()
-            except:
-                pass
-
-        if attempt < MAX_RETRIES:
-            time.sleep(RETRY_DELAY)
 
 
 

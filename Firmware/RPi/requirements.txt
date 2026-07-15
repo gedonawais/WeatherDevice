@@ -1,0 +1,6 @@
+Pillow
+requests
+numpy
+onnxruntime
+pyserial
+opencv-python

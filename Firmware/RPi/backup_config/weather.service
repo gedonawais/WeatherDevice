@@ -9,7 +9,7 @@ ExecStart=/usr/bin/python3 /home/WeatherDevice/Firmware/RPi/weather.py
 WorkingDirectory=/home/WeatherDevice/Firmware/RPi
 StandardOutput=journal
 StandardError=journal
-Restart=on-failure
+Restart=always
 User=root
 
 [Install]

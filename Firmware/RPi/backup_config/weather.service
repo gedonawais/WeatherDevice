@@ -1,15 +1,15 @@
 [Unit]
 Description=Weather Camera Service
-After=network-online.target
+After=NetwrokManager.service network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStartPre=/usr/bin/python3 /home/WeatherDevice/Firmware/RPi/Script_Updater.py
 ExecStart=/usr/bin/python3 /home/WeatherDevice/Firmware/RPi/weather.py
 WorkingDirectory=/home/WeatherDevice/Firmware/RPi
+
 StandardOutput=journal
 StandardError=journal
-Restart=on-failure
+Restart=always
 User=root
 
 [Install]

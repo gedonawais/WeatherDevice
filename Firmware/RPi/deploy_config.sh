@@ -44,10 +44,16 @@ echo "      -> /home/WeatherDevice/Firmware/RPi/Logs"
 echo "      -> /home/WeatherDevice/Firmware/RPi/Images"
 
 # ── 6. Disable serial console, enable hardware UART ─────────────────────────
-echo "[6/6] Configuring serial port (disable console, enable hardware UART)..."
+echo "[6/7] Configuring serial port (disable console, enable hardware UART)..."
 sudo raspi-config nonint do_serial_hw 0    # enable hardware serial port
 sudo raspi-config nonint do_serial_cons 1  # disable login shell over serial
 echo "      -> Serial console disabled, hardware UART enabled"
+
+# ── 7. Hardcode DNS (prevent pppd usepeerdns from overwriting) ───────────────
+echo "[7/7] Writing static DNS (Google) to /etc/resolv.conf..."
+sudo cp "$CONFIG_DIR/resolv.conf" /etc/resolv.conf
+sudo chattr +i /etc/resolv.conf   # make immutable so pppd cannot overwrite it
+echo "      -> /etc/resolv.conf (immutable)"
 
 echo ""
 echo "=== Done! ==="
@@ -57,3 +63,5 @@ echo "  1. Reboot for boot config changes to take effect: sudo reboot"
 echo "  2. After reboot, install dependencies:           bash $SCRIPT_DIR/install.sh"
 echo "  3. Start the weather service manually to test:   sudo systemctl start weather.service"
 echo "  4. Check service logs:                           journalctl -u weather.service -f"
+echo "  NOTE: /etc/resolv.conf is now immutable (Google DNS hardcoded)."
+echo "        To edit it: sudo chattr -i /etc/resolv.conf"

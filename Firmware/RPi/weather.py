@@ -62,8 +62,9 @@ def get_logs(lines=40):
 
 
 def refresh_dns():
-    # Write Google DNS directly to /etc/resolv.conf so name resolution
-    # works over the PPP interface.
+    # Safety net: re-write Google DNS in case /etc/resolv.conf was modified.
+    # Primary fix is deploy_config.sh making /etc/resolv.conf immutable with
+    # usepeerdns removed from the pppd peer config.
     try:
         subprocess.run(
             ["sudo", "bash", "-c", "echo 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > /etc/resolv.conf"],

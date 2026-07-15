@@ -1,0 +1,7 @@
+numpy
+Pillow
+onnxruntime
+requests
+pyserial
+opencv-python
+RPi.GPIO

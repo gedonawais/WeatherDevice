@@ -61,14 +61,21 @@ def get_logs(lines=40):
         return f"Error reading logs: {e}"
 
 
-def sync_time_after_ppp():
+def refresh_dns():
+    # Bookworm: systemd-resolved manages resolv.conf and may override pppd's
+    # usepeerdns. Write Google DNS directly so name resolution works over PPP.
     try:
-        # Bookworm: systemd-resolved manages resolv.conf and may override pppd's
-        # usepeerdns. Write Google DNS directly so name resolution works over PPP.
         subprocess.run(
             ["sudo", "bash", "-c", "echo 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > /etc/resolv.conf"],
             check=True
         )
+    except Exception as e:
+        logging.error(f"DNS refresh failed: {e}")
+
+
+def sync_time_after_ppp():
+    try:
+        refresh_dns()
         subprocess.run(["sudo", "chronyc", "makestep"], check=True)
     except Exception as e:
         logging.error(f"Time sync failed: {e}")
@@ -78,13 +85,7 @@ def sync_time_after_ppp():
 def uploadLogs():
     # Re-apply DNS — resolv.conf may have been reset by systemd-resolved
     # by the time this is called (after waiting for the ESP32 shutdown signal).
-    try:
-        subprocess.run(
-            ["sudo", "bash", "-c", "echo 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > /etc/resolv.conf"],
-            check=True
-        )
-    except Exception as e:
-        logging.error(f"DNS refresh failed in uploadLogs: {e}")
+    refresh_dns()
 
     #Upload to FTP with retries
     FTP_success = False
@@ -265,6 +266,7 @@ try:
         print (e)
         
     #Uploading FTP
+    refresh_dns()
     FTP_success = False
     nameImage = f"Image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
     json_name = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"

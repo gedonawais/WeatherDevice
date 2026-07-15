@@ -62,15 +62,28 @@ def get_logs(lines=40):
 
 
 def refresh_dns():
-    # Bookworm: systemd-resolved manages resolv.conf and may override pppd's
-    # usepeerdns. Write Google DNS directly so name resolution works over PPP.
+    # Bookworm: use resolvectl to register DNS on the ppp0 interface so that
+    # systemd-resolved itself forwards queries correctly — this survives any
+    # automatic resolv.conf rewrites by systemd-resolved.
     try:
         subprocess.run(
-            ["sudo", "bash", "-c", "echo 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > /etc/resolv.conf"],
+            ["sudo", "resolvectl", "dns", "ppp0", "8.8.8.8", "8.8.4.4"],
+            check=True
+        )
+        # ~. makes ppp0 the default route for all domain lookups
+        subprocess.run(
+            ["sudo", "resolvectl", "domain", "ppp0", "~."],
             check=True
         )
     except Exception as e:
-        logging.error(f"DNS refresh failed: {e}")
+        logging.error(f"resolvectl DNS setup failed, falling back to resolv.conf: {e}")
+        try:
+            subprocess.run(
+                ["sudo", "bash", "-c", "echo 'nameserver 8.8.8.8\nnameserver 8.8.4.4' > /etc/resolv.conf"],
+                check=True
+            )
+        except Exception as e2:
+            logging.error(f"DNS refresh failed: {e2}")
 
 
 def sync_time_after_ppp():

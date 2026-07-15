@@ -1,4 +1,3 @@
-#testing
 from picamera2 import Picamera2
 from PIL import Image
 import requests
@@ -17,15 +16,15 @@ import sim_ppp
 from uart_comm import UARTComm
 from io import BytesIO
 
-LOG_PATH = "/home/gedonsoft/WeatherDevice/Firmware/RPi/Logs/capture.log"
-IMAGE_PATH = "/home/gedonsoft/WeatherDevice/Firmware/RPi/Images/picture.jpg"
-UPLOAD_IMAGE_PATH = "/home/gedonsoft/WeatherDevice/Firmware/RPi/Images/out.jpg"
+LOG_PATH = "/home/WeatherDevice/Firmware/RPi/Logs/capture.log"
+IMAGE_PATH = "/home/WeatherDevice/Firmware/RPi/Images/picture.jpg"
+UPLOAD_IMAGE_PATH = "/home/WeatherDevice/Firmware/RPi/Images/out.jpg"
 UPLOAD_URL = "https://emea-edu.com/camera1/upload.php"
 FTP_DIR = "ftp.metops.net"
 FTP_USER = "gedonsoft"
 FTP_PWD = "loHtWAkvpDjEC47RzmhjC"
 FTP_FOLDER = "upload/camera1"
-file_path = "/home/gedonsoft/WeatherDevice/Firmware/RPi/out_pipeline.json"
+file_path = "/home/WeatherDevice/Firmware/RPi/out_pipeline.json"
 
 SIGNAL_TO_ESP32 = 23
 SHUTDOWN_FROM_ESP32 = 24
@@ -224,7 +223,7 @@ try:
         logging.info(f"Camera Error:{e}")
         os.system("sudo shutdown now")
     try:
-        subprocess.run(["python3","/home/gedonsoft/Weather/run_pipeline.py", "--input", "/home/gedonsoft/Weather/picture.jpg", "--output", "/home/gedonsoft/Weather/out.jpg", "--save-json", "--output-size", "1280x720"],capture_output= True,text = True, check = True)
+        subprocess.run(["python3","/home/WeatherDevice/Firmware/RPi/run_pipeline.py", "--input", "/home/WeatherDevice/Firmware/RPi/Images/picture.jpg", "--output", "/home/WeatherDevice/Firmware/RPi/Images/out.jpg", "--save-json", "--output-size", "1280x720"],capture_output= True,text = True, check = True)
         logging.info("Pipeline finished successfully")
 
     except subprocess.CalledProcessError as e:
@@ -260,9 +259,9 @@ try:
             nameImage = f"Image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
             json = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
 
-            with open('/home/gedonsoft/Weather/out.jpg', 'rb') as f:
+            with open('/home/WeatherDevice/Firmware/RPi/Images/out.jpg', 'rb') as f:
                 resp1 = ftp.storbinary(f'STOR images/{nameImage}', f)
-            with open('/home/gedonsoft/Weather/out_pipeline.json', 'rb') as j:
+            with open('/home/WeatherDevice/Firmware/RPi/out_pipeline.json', 'rb') as j:
                 resp2 = ftp.storbinary(f'STOR json/{json}', j)
             with open(LOG_PATH, 'rb') as k:
                 resp3 = ftp.storbinary('STOR LOGS.log', k)
@@ -299,7 +298,7 @@ try:
     HTML_success = False
     for attempt in range(1, MAX_RETRIES):
         try:
-            with open(UPLOAD_IMAGE_PATH, 'rb') as f, open("/home/gedonsoft/Weather/out_pipeline.json", "rb") as j:
+            with open(UPLOAD_IMAGE_PATH, 'rb') as f, open("/home/WeatherDevice/Firmware/RPi/out_pipeline.json", "rb") as j:
                 logs = get_logs()
                 response = requests.post(UPLOAD_URL, files={"image": f, "jsonfile": j}, timeout=(20,180))
             if response.status_code == 200:

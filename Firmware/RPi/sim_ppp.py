@@ -14,7 +14,7 @@ MAX_PPP_RETRIES = 3
 CFUN_REBOOT_WAIT = 10  # seconds for module to restart
 
 
-def log_no_time(message, log_path = "/home/gedonsoft/WeatherDevice/Firmware/RPi/Logs/capture.log"):
+def log_no_time(message, log_path = "/home/WeatherDevice/Firmware/RPi/Logs/capture.log"):
     with open(log_path, "a") as f:
         f.write(f"{message}\n")
         

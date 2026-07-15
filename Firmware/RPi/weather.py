@@ -255,6 +255,10 @@ try:
         
     #Uploading FTP
     FTP_success = False
+    nameImage = f"Image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+    json_name = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+
+    # ── Upload image + JSON (one session) ────────────────────────────────────
     for attempt in range(1, MAX_RETRIES):
         try:
             ftp = FTP(FTP_DIR)
@@ -262,26 +266,19 @@ try:
             ftp.set_pasv(True)
             ftp.cwd(FTP_FOLDER)
 
-            nameImage = f"Image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-            json = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-
             with open('/home/WeatherDevice/Firmware/RPi/Images/out.jpg', 'rb') as f:
                 resp1 = ftp.storbinary(f'STOR images/{nameImage}', f)
             with open('/home/WeatherDevice/Firmware/RPi/out_pipeline.json', 'rb') as j:
-                resp2 = ftp.storbinary(f'STOR json/{json}', j)
-            with open(LOG_PATH, 'rb') as k:
-                resp3 = ftp.storbinary('STOR LOGS.log', k)
+                resp2 = ftp.storbinary(f'STOR json/{json_name}', j)
 
-
-            # FTP returns a text message — '226 Transfer complete' means success
-            if resp1.startswith('226') and resp2.startswith('226') and resp3.startswith('226'):
+            if resp1.startswith('226') and resp2.startswith('226'):
                 print(f"FTP- Image and JSON Upload Successful on attempt {attempt}")
                 logging.info(f"FTP- Image and JSON Upload Successful on attempt {attempt}")
                 FTP_success = True
                 break
             else:
                 print("Unexpected FTP response")
-                logging.error(f"Unexpected FTP response: {resp1}, {resp2}, {resp3}")
+                logging.error(f"Unexpected FTP response: {resp1}, {resp2}")
 
         except error_perm as e:
             print("Permission or FTP error")
@@ -289,6 +286,40 @@ try:
         except Exception as e:
             print(f"Upload Failed {e}")
             logging.error(f"Upload failed: {e}")
+        finally:
+            try:
+                ftp.quit()
+            except:
+                pass
+
+        if attempt < MAX_RETRIES:
+            time.sleep(RETRY_DELAY)
+
+    # ── Upload logs (separate session to avoid server connection reset) ───────
+    for attempt in range(1, MAX_RETRIES):
+        try:
+            ftp = FTP(FTP_DIR)
+            ftp.login(FTP_USER, FTP_PWD)
+            ftp.set_pasv(True)
+            ftp.cwd(FTP_FOLDER)
+
+            with open(LOG_PATH, 'rb') as k:
+                resp3 = ftp.storbinary('STOR LOGS.log', k)
+
+            if resp3.startswith('226'):
+                print(f"FTP- Logs Upload Successful on attempt {attempt}")
+                logging.info(f"FTP- Logs Upload Successful on attempt {attempt}")
+                break
+            else:
+                print("Unexpected FTP response for logs")
+                logging.error(f"Unexpected FTP response for logs: {resp3}")
+
+        except error_perm as e:
+            print("Permission or FTP error (logs)")
+            logging.error(f"Permission or FTP error (logs): {e}")
+        except Exception as e:
+            print(f"Log Upload Failed {e}")
+            logging.error(f"Log upload failed: {e}")
         finally:
             try:
                 ftp.quit()

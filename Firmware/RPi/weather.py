@@ -16,8 +16,6 @@ import logging
 import sim_ppp
 from uart_comm import UARTComm
 from io import BytesIO
-from sht3x import SHT3x
-from mlx90614 import *
 
 LOG_PATH = "/home/gedonsoft/WeatherDevice/Firmware/RPi/Logs/capture.log"
 IMAGE_PATH = "/home/gedonsoft/WeatherDevice/Firmware/RPi/Images/picture.jpg"

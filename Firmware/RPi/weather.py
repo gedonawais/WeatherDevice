@@ -63,7 +63,7 @@ def get_logs(lines=40):
 
 def sync_time_after_ppp():
     try:
-        subprocess.run(["sudo", "ntpdate", "-u", "pool.ntp.org"], check=True)
+        subprocess.run(["sudo", "chronyc", "makestep"], check=True)
     except Exception as e:
         logging.error(f"Time sync failed: {e}")
 

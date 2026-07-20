@@ -71,6 +71,8 @@ def reinit_logging():
 
 def sync_time_after_ppp():
     try:
+        # Wait for chrony to connect to NTP servers after PPP comes up
+        time.sleep(5)
         # Force chrony to immediately step the clock to the correct time
         subprocess.run(["sudo", "chronyc", "makestep"], check=True)
         # Re-initialize logging so all future log entries use the corrected timestamp
@@ -347,12 +349,12 @@ try:
             logging.info("===================================================================================\n")
             uploadLogs()
 
-            #Close ppp conection
+            #Close ppp connection
             try:
                 sim_ppp.close_connection(ppp_process)
             except Exception as e:
                 logging.error(f"Error closing PPP connection: {e}")
-            
+
             time.sleep(1)
             os.system("sudo shutdown now")
         time.sleep(0.5)

@@ -1,6 +1,6 @@
 [Unit]
 Description=Weather Camera Service
-After=NetwrokManager.service network-online.target
+After=NetworkManager.service network-online.target
 Wants=network-online.target
 
 [Service]

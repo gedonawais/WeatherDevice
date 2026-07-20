@@ -1,3 +1,4 @@
+#Weather1.py
 from picamera2 import Picamera2
 from PIL import Image
 import requests
@@ -25,6 +26,7 @@ FTP_USER = "gedonsoft"
 FTP_PWD = "loHtWAkvpDjEC47RzmhjC"
 FTP_FOLDER = "upload/camera1"
 file_path = "/home/WeatherDevice/Firmware/RPi/out_pipeline.json"
+
 
 SIGNAL_TO_ESP32 = 23
 SHUTDOWN_FROM_ESP32 = 24
@@ -63,7 +65,7 @@ def get_logs(lines=40):
 
 def sync_time_after_ppp():
     try:
-        subprocess.run(["sudo", "chronyc", "makestep"], check=True)
+        subprocess.run(["sudo", "ntpdate", "-u", "pool.ntp.org"], check=True)
     except Exception as e:
         logging.error(f"Time sync failed: {e}")
 
@@ -148,7 +150,6 @@ def wait_for_uart(uart, timeout=5):
 # --- Pi + upload + GPIO setup + UART Battery Monitoring ---
 
 logging.basicConfig (filename=LOG_PATH, level= logging.INFO, format="%(asctime)s %(levelname)s: %(message)s", force=True, filemode='a')
-logging.Formatter.converter = time.localtime
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(SIGNAL_TO_ESP32, GPIO.OUT, initial=GPIO.LOW)
@@ -231,8 +232,8 @@ try:
         logging.error(f"Pipeline failed with return code {e.returncode}")
         logging.error(f"Pipeline stdout:\n{e.stdout}")
         logging.error(f"Pipeline stderr:\n{e.stderr}")
-    
-    
+
+
     # Appending JSON with temp and battery data
     try:
         with open(file_path, "r") as f:
@@ -244,16 +245,12 @@ try:
 
         with open(file_path, "w") as f:
             json.dump(data, f, indent=4)
-    
+
     except Exception as e:
         print (e)
-        
+
     #Uploading FTP
     FTP_success = False
-    nameImage = f"Image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-    json_name = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-
-    # ── Upload image + JSON (one session) ────────────────────────────────────
     for attempt in range(1, MAX_RETRIES):
         try:
             ftp = FTP(FTP_DIR)
@@ -261,19 +258,26 @@ try:
             ftp.set_pasv(True)
             ftp.cwd(FTP_FOLDER)
 
+            nameImage = f"Image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+            json = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+
             with open('/home/WeatherDevice/Firmware/RPi/Images/out.jpg', 'rb') as f:
                 resp1 = ftp.storbinary(f'STOR images/{nameImage}', f)
             with open('/home/WeatherDevice/Firmware/RPi/out_pipeline.json', 'rb') as j:
-                resp2 = ftp.storbinary(f'STOR json/{json_name}', j)
+                resp2 = ftp.storbinary(f'STOR json/{json}', j)
+            with open(LOG_PATH, 'rb') as k:
+                resp3 = ftp.storbinary('STOR LOGS.log', k)
 
-            if resp1.startswith('226') and resp2.startswith('226'):
+
+            # FTP returns a text message — '226 Transfer complete' means success
+            if resp1.startswith('226') and resp2.startswith('226') and resp3.startswith('226'):
                 print(f"FTP- Image and JSON Upload Successful on attempt {attempt}")
                 logging.info(f"FTP- Image and JSON Upload Successful on attempt {attempt}")
                 FTP_success = True
                 break
             else:
                 print("Unexpected FTP response")
-                logging.error(f"Unexpected FTP response: {resp1}, {resp2}")
+                logging.error(f"Unexpected FTP response: {resp1}, {resp2}, {resp3}")
 
         except error_perm as e:
             print("Permission or FTP error")
@@ -289,7 +293,6 @@ try:
 
         if attempt < MAX_RETRIES:
             time.sleep(RETRY_DELAY)
-
 
 
 
@@ -321,19 +324,19 @@ try:
             logs = get_logs()
             f.write(f"{logs}\n")
         os.system("sudo shutdown now")
-    
+
     elif not HTML_success:
         logging.error("All HTML upload attempts failed.")
         with open(LOG_PATH, "a") as f:
             logs = get_logs()
             f.write(f"{logs}\n")
-    
+
     elif not FTP_success:
         logging.error("All FTP upload attempts failed.")
         with open(LOG_PATH, "a") as f:
             logs = get_logs()
             f.write(f"{logs}\n")
-        
+
 
     #------------------ Pulse ESP32 after successful upload -----------------
     GPIO.output(SIGNAL_TO_ESP32, GPIO.HIGH)
@@ -345,14 +348,14 @@ try:
 
     GPIO.output(SIGNAL_TO_ESP32, GPIO.LOW)
     print("Signaled ESP32 that image was sent.")
-    
+
     trim_log_file(LOG_PATH, 41)
     # Wait for shutdown
     print("Waiting for shutdown signal from ESP32")
     while True:
         if GPIO.input(SHUTDOWN_FROM_ESP32) == GPIO.HIGH:
             time.sleep(1)
-            print("Got Signal from ESP32 after sending Image,Uploading Logs and Going to SHUT DOWN")
+            print("Got signal from ESP32 for shutdown")
             logging.info("Got Signal from ESP32 after sending Image,Uploading Logs and Going to SHUT DOWN")
             logging.info("===================================================================================\n")
             uploadLogs()
@@ -363,7 +366,3 @@ except Exception as e:
     print (e)
     logging.critical(f"Error: {e}")
     os.system("sudo shutdown now")
-
-
-
-

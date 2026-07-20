@@ -56,7 +56,7 @@ def log_no_time(message, log_path = LOG_PATH):
     with open(log_path, "a") as f:
         f.write(f"{message}\n") 
 
-def get_logs(lines=48):
+def get_logs(lines=50):
     try:
         return subprocess.check_output(["tail",f"-n{lines}",LOG_PATH]).decode("utf-8",errors="ignore")
     except Exception as e:

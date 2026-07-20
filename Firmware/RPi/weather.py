@@ -63,12 +63,21 @@ def get_logs(lines=45):
         return f"Error reading logs: {e}"
 
 
+def reinit_logging():
+    """Re-initialize logging after time sync so all future timestamps are correct."""
+    logging.shutdown()
+    logging.basicConfig(filename=LOG_PATH, level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s", force=True, filemode='a')
+
+
 def sync_time_after_ppp():
     try:
-        # Force chrony to immediately sync time from NTP servers
+        # Force chrony to immediately step the clock to the correct time
         subprocess.run(["sudo", "chronyc", "makestep"], check=True)
+        # Re-initialize logging so all future log entries use the corrected timestamp
+        reinit_logging()
         logging.info("Time sync successful via chrony")
     except Exception as e:
+        reinit_logging()
         logging.error(f"Time sync failed: {e}")
 
 
@@ -180,8 +189,7 @@ try:
         print("PPP connection failed. Shutting Down")
         os.system("sudo shutdown now")
     else:
-        sync_time_after_ppp()
-        logging.basicConfig (filename=LOG_PATH, level= logging.INFO, format="%(asctime)s %(levelname)s: %(message)s", force=True, filemode='a')
+        sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
         logging.info("System started")
 
     # Capture image

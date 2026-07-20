@@ -225,7 +225,7 @@ try:
         logging.info(f"Camera Error:{e}")
         os.system("sudo shutdown now")
     try:
-        subprocess.run(["python3","/home/gedonsoft/Weather/run_pipeline.py", "--input", "/home/WeatherDevice/Firmware/RPi/Images/picture.jpg", "--output", "/home/WeatherDevice/Firmware/RPi/Images/out.jpg", "--save-json", "--output-size", "1280x720"],capture_output= True,text = True, check = True)
+        subprocess.run(["python3","/home/WeatherDevice/Firmware/RPi/run_pipeline.py", "--input", "/home/WeatherDevice/Firmware/RPi/Images/picture.jpg", "--output", "/home/WeatherDevice/Firmware/RPi/Images/out.jpg", "--save-json", "--output-size", "1280x720"],capture_output= True,text = True, check = True)
         logging.info("Pipeline finished successfully")
 
     except subprocess.CalledProcessError as e:
@@ -263,7 +263,7 @@ try:
 
             with open('/home/WeatherDevice/Firmware/RPi/Images/out.jpg', 'rb') as f:
                 resp1 = ftp.storbinary(f'STOR images/{nameImage}', f)
-            with open('/home/gedonsoft/Weather/out_pipeline.json', 'rb') as j:
+            with open('/home/WeatherDevice/Firmware/RPi/out_pipeline.json', 'rb') as j:
                 resp2 = ftp.storbinary(f'STOR json/{json}', j)
             with open(LOG_PATH, 'rb') as k:
                 resp3 = ftp.storbinary('STOR LOGS.log', k)
@@ -300,7 +300,7 @@ try:
     HTML_success = False
     for attempt in range(1, MAX_RETRIES):
         try:
-            with open(UPLOAD_IMAGE_PATH, 'rb') as f, open("/home/gedonsoft/Weather/out_pipeline.json", "rb") as j:
+            with open(UPLOAD_IMAGE_PATH, 'rb') as f, open("/home/WeatherDevice/Firmware/RPi/out_pipeline.json", "rb") as j:
                 logs = get_logs()
                 response = requests.post(UPLOAD_URL, files={"image": f, "jsonfile": j}, timeout=(20,180))
             if response.status_code == 200:

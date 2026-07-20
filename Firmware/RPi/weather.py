@@ -56,7 +56,7 @@ def log_no_time(message, log_path = LOG_PATH):
     with open(log_path, "a") as f:
         f.write(f"{message}\n") 
 
-def get_logs(lines=40):
+def get_logs(lines=45):
     try:
         return subprocess.check_output(["tail",f"-n{lines}",LOG_PATH]).decode("utf-8",errors="ignore")
     except Exception as e:
@@ -149,8 +149,6 @@ def wait_for_uart(uart, timeout=5):
 
 # --- Pi + upload + GPIO setup + UART Battery Monitoring ---
 
-logging.basicConfig (filename=LOG_PATH, level= logging.INFO, format="%(asctime)s %(levelname)s: %(message)s", force=True, filemode='a')
-
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(SIGNAL_TO_ESP32, GPIO.OUT, initial=GPIO.LOW)
 GPIO.setup(SHUTDOWN_FROM_ESP32, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
@@ -181,33 +179,13 @@ try:
         os.system("sudo shutdown now")
     else:
         sync_time_after_ppp()
-
-
-    # Temp and Humidity
-    #try:
-        #sensor = SHT3x(bus_id=1, address=0x44)
-        #temp, hum = sensor.read_avg(samples=8, delay=0.2)
-        #logging.info (f"{temp:.2f}C  {hum:.2f} %H")
-    #except Exception as e:
-        #logging.info(f"SHT3X Error:{e}")
-        #print(f"SHT3X Error:{e}")
-
-    # IR Temperature
-    #try:
-        #sensor = MLX90614()
-        #IR_Temp = str(sensor.readObjectTemperature())
-        #logging.info(f"IR Temp:{sensor.readObjectTemperature()}")
-        #print(IR_Temp)
-
-    #except Exception as e:
-        #logging.info(f"IR Temp Error:{e}")
-        #print (e)
-
+        logging.basicConfig (filename=LOG_PATH, level= logging.INFO, format="%(asctime)s %(levelname)s: %(message)s", force=True, filemode='a')
+        logging.info("System started")
 
     # Capture image
     try:
         picam2 = Picamera2()
-        config = picam2.create_still_configuration(main={"size":(720,1280)})
+        config = picam2.create_still_configuration(main={"size":(1280,720)})
         picam2.configure(config)
         picam2.start()
         picam2.capture_file(IMAGE_PATH)
@@ -215,7 +193,6 @@ try:
         picam2.close()
 
         img = Image.open(IMAGE_PATH)
-        img = img.rotate(-90, expand=True)  # clockwise rotation
         img.save(IMAGE_PATH)
         print("Image Captured")
         logging.info("Image captured")
@@ -359,6 +336,14 @@ try:
             logging.info("Got Signal from ESP32 after sending Image,Uploading Logs and Going to SHUT DOWN")
             logging.info("===================================================================================\n")
             uploadLogs()
+
+            #Close ppp conection
+            try:
+                sim_ppp.close_connection(ppp_process)
+            except Exception as e:
+                logging.error(f"Error closing PPP connection: {e}")
+            
+            time.sleep(1)
             os.system("sudo shutdown now")
         time.sleep(0.5)
 

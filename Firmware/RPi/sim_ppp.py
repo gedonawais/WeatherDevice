@@ -150,6 +150,24 @@ def init_connection():
     log_no_time("All PPP attempts failed, aborting.")
     return None
 
+
+def close_connection(ppp_process):
+    print("Closing PPP connection...")
+    log_no_time("Closing PPP connection...")
+
+    try:
+        if ppp_process:
+            ppp_process.terminate()
+            ppp_process.wait(timeout=10)
+            log_no_time("PPP process terminated")
+        else:
+            subprocess.run(["sudo", "killall", "pppd"])
+
+    except Exception as e:
+        log_no_time(f"Error closing PPP: {e}")
+        subprocess.run(["sudo", "killall", "pppd"])
+        
+
 if __name__ == "__main__":
     init_connection()
 

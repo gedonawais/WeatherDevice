@@ -11,11 +11,11 @@
 // Battery Monitoring
 const int BATTERY_PIN = 5;  
 
-const uint64_t PI_TIMEOUT              = 8ULL * 60 * 1000;          
-const uint64_t WDT_TIMEOUT             = 2ULL * 60 * 1000;          
-const uint64_t SHUTDOWN_TIMEOUT        = 3ULL * 60 * 1000;          
-const uint64_t SLEEP_TIME              = 20ULL * 60 * 1000000;      
-const uint64_t SLEEP_TIME_BATTERY_DIE  = 60ULL * 60 * 1000000;      
+const uint64_t PI_TIMEOUT              = 8ULL * 60 * 1000;      // 8 mins      
+const uint64_t WDT_TIMEOUT             = 2ULL * 60 * 1000;      // 2 mins      
+const uint64_t SHUTDOWN_TIMEOUT        = 3ULL * 60 * 1000;      // 3 mins    
+const uint64_t SLEEP_TIME              = 2ULL * 60 * 1000000;   // 20 mins 
+const uint64_t SLEEP_TIME_BATTERY_DIE  = 60ULL * 60 * 1000000;  // 60 mins    
 
 unsigned long PiStartTime = 0;
 unsigned long shutdownStart = 0;
@@ -114,10 +114,10 @@ void loop()
 
     shutdownStart = millis();
     // Wait for Pi shutdown complete
+    Serial.println("Waiting for Pi to shutdown");
     while (digitalRead(SHUTDOWN_COMPLETE_STATUS_FROM_RPI) != LOW) 
     {
       esp_task_wdt_reset();
-      Serial.println("Waiting for Pi to shutdown");
       if (millis() - shutdownStart > SHUTDOWN_TIMEOUT)
       {
         Serial.println("Pi shutdown timeout, proceeding anyway.");
@@ -132,7 +132,8 @@ void loop()
     digitalWrite(RPI_ENABLE, LOW);
     delay(500);
 
-    Serial.println("ESP going to deep sleep for 10 minutes...");
+    Serial.print("ESP going to deep sleep for ");
+    Serial.println(SLEEP_TIME);
     esp_sleep_enable_timer_wakeup(SLEEP_TIME);
     esp_deep_sleep_start();
   }

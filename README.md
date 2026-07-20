@@ -39,6 +39,8 @@ Select console auto login.
 
 This allows the Raspberry Pi to automatically log in after boot.
 
+Also, set System Date and Time in Localisation menu
+
 ---
 
 ## 2.2 Disable sudo Password Requirement

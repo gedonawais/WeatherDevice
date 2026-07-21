@@ -207,7 +207,7 @@ This installs all required libraries and dependencies.
 
 # 10. Disable Wi-Fi (MUST)
 
-If the device uses a cellular connection instead of Wi-Fi, disable Wi-Fi:
+Disable Wi-Fi:
 
 ```bash
 sudo nmcli radio wifi off

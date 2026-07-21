@@ -142,13 +142,13 @@ cd /home
 Clone the repository:
 
 ```bash
-git clone <REPOSITORY_URL>
+sudo git clone <REPOSITORY_URL>
 ```
 
 Example:
 
 ```bash
-git clone https://github.com/<username>/WeatherDevice.git
+sudo git clone https://github.com/<username>/WeatherDevice.git
 ```
 
 The project should now be available at:

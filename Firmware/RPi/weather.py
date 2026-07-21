@@ -216,7 +216,6 @@ uart = UARTComm(port='/dev/serial0', baudrate=9600)
 mark_session_start()
 
 try:
-    getFrameRate()
 
     while True:
         uart.send("SEND VOLTAGE")
@@ -240,6 +239,9 @@ try:
     else:
         sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
 
+    
+    getFrameRate()
+    
     # Capture image
     try:
         picam2 = Picamera2()

@@ -56,11 +56,44 @@ def log_no_time(message, log_path = LOG_PATH):
     with open(log_path, "a") as f:
         f.write(f"{message}\n") 
 
-def get_logs(lines=50):
+
+def mark_session_start():
+    with open(LOG_PATH, "a") as f:
+        f.write(f"=== SESSION START {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ===\n")
+
+
+def get_logs():
     try:
-        return subprocess.check_output(["tail",f"-n{lines}",LOG_PATH]).decode("utf-8",errors="ignore")
+        with open(LOG_PATH, "r") as f:
+            lines = f.readlines()
+
+        starts = [i for i, line in enumerate(lines) if "=== SESSION START" in line]
+
+        if len(starts) >= 2:
+            return "".join(lines[starts[-2]:])
+        elif len(starts) == 1:
+            return "".join(lines[starts[-1]:])
+        else:
+            return "".join(lines[-50:])
     except Exception as e:
         return f"Error reading logs: {e}"
+
+
+def keep_last_two_sessions():
+    try:
+        with open(LOG_PATH, "r") as f:
+            lines = f.readlines()
+
+        starts = [i for i, line in enumerate(lines) if "=== SESSION START" in line]
+
+        if len(starts) >= 3:
+            lines = lines[starts[-2]:]
+
+        with open(LOG_PATH, "w") as f:
+            f.writelines(lines)
+
+    except Exception as e:
+        print(f"Error trimming log file: {e}")
 
 
 def reinit_logging():
@@ -167,6 +200,7 @@ GPIO.setup(SHUTDOWN_FROM_ESP32, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 GPIO.setup(SHUTDOWN_COMPLETED, GPIO.OUT, initial=GPIO.HIGH)
 
 uart = UARTComm(port='/dev/serial0', baudrate=9600)
+mark_session_start()
 
 try:
     while True:
@@ -212,7 +246,7 @@ try:
         logging.info(f"Camera Error:{e}")
         os.system("sudo shutdown now")
     try:
-        subprocess.run(["python3","/home/WeatherDevice/Firmware/RPi/run_pipeline.py", "--input", "/home/WeatherDevice/Firmware/RPi/Images/picture.jpg", "--output", "/home/WeatherDevice/Firmware/RPi/Images/out.jpg", "--weather-onnx", "/home/WeatherDevice/Firmware/RPi/weathernet.onnx", "--classes", "/home/WeatherDevice/Firmware/RPi/class_to_idx.json", "--yolox-onnx", "/home/WeatherDevice/Firmware/RPi/model.onnx", "--yolox-classes", "/home/WeatherDevice/Firmware/RPi/classes.txt"], check=True, capture_output=True, text=True)
+        subprocess.run(["python3","/home/WeatherDevice/Firmware/RPi/run_pipeline.py", "--input", "/home/WeatherDevice/Firmware/RPi/Images/picture.jpg", "--output", "/home/WeatherDevice/Firmware/RPi/Images/out.jpg", "--save-json", "--output-size", "1280x720"],capture_output= True,text = True, check = True)
         logging.info("Pipeline finished successfully")
 
     except subprocess.CalledProcessError as e:
@@ -336,7 +370,7 @@ try:
     GPIO.output(SIGNAL_TO_ESP32, GPIO.LOW)
     print("Signaled ESP32 that image was sent.")
 
-    trim_log_file(LOG_PATH, 41)
+    keep_last_two_sessions()
     # Wait for shutdown
     print("Waiting for shutdown signal from ESP32")
     while True:

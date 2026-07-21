@@ -156,7 +156,6 @@ def close_connection(ppp_process):
         if ppp_process:
             ppp_process.terminate()
             ppp_process.wait(timeout=10)
-            log_no_time("PPP process terminated")
         else:
             subprocess.run(["sudo", "killall", "pppd"])
 

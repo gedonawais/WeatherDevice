@@ -13,7 +13,7 @@ This document explains how to set up the Raspberry Pi Zero 2W for the Weather De
    - Set username and password
    - Configure Wi-Fi (optional)
 
-Boot the Raspberry Pi and connect through SSH.
+Boot the Raspberry Pi.
 
 ---
 

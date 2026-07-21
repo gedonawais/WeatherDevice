@@ -152,9 +152,6 @@ def init_connection():
 
 
 def close_connection(ppp_process):
-    print("Closing PPP connection...")
-    log_no_time("Closing PPP connection...")
-
     try:
         if ppp_process:
             ppp_process.terminate()

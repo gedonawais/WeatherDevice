@@ -77,7 +77,6 @@ def sync_time_after_ppp():
         subprocess.run(["sudo", "chronyc", "makestep"], check=True)
         # Re-initialize logging so all future log entries use the corrected timestamp
         reinit_logging()
-        logging.info("Time sync successful via chrony")
     except Exception as e:
         reinit_logging()
         logging.error(f"Time sync failed: {e}")
@@ -192,7 +191,6 @@ try:
         os.system("sudo shutdown now")
     else:
         sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
-        logging.info("System started")
 
     # Capture image
     try:

@@ -189,7 +189,7 @@ Reboot the device:
 sudo reboot
 ```
 
-Wait until the Raspberry Pi boots again and reconnect through SSH.
+Wait until the Raspberry Pi boots again.
 
 ---
 

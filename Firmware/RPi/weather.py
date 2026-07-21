@@ -246,7 +246,7 @@ try:
         logging.info(f"Camera Error:{e}")
         os.system("sudo shutdown now")
     try:
-        subprocess.run(["python3","/home/WeatherDevice/Firmware/RPi/run_pipeline.py", "--input", "/home/WeatherDevice/Firmware/RPi/Images/picture.jpg", "--output", "/home/WeatherDevice/Firmware/RPi/Images/out.jpg", "--save-json", "--output-size", "1280x720"],capture_output= True,text = True, check = True)
+        subprocess.run(["python3","/home/WeatherDevice/Firmware/RPi/run_pipeline.py", "--input", "/home/WeatherDevice/Firmware/RPi/Images/picture.jpg", "--output", "/home/WeatherDevice/Firmware/RPi/Images/out.jpg", "--weather-onnx", "/home/WeatherDevice/Firmware/RPi/weathernet.onnx", "--classes", "/home/WeatherDevice/Firmware/RPi/class_to_idx.json", "--yolox-onnx", "/home/WeatherDevice/Firmware/RPi/model.onnx", "--yolox-classes", "/home/WeatherDevice/Firmware/RPi/classes.txt"], check=True, capture_output=True, text=True)
         logging.info("Pipeline finished successfully")
 
     except subprocess.CalledProcessError as e:

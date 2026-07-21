@@ -13,7 +13,7 @@ This document explains how to set up the Raspberry Pi Zero 2W for the Weather De
    - Set username and password
    - Configure Wi-Fi (optional)
 
-Boot the Raspberry Pi and connect through SSH.
+Boot the Raspberry Pi.
 
 ---
 
@@ -142,13 +142,13 @@ cd /home
 Clone the repository:
 
 ```bash
-git clone <REPOSITORY_URL>
+sudo git clone <REPOSITORY_URL>
 ```
 
 Example:
 
 ```bash
-git clone https://github.com/<username>/WeatherDevice.git
+sudo git clone https://github.com/<username>/WeatherDevice.git
 ```
 
 The project should now be available at:
@@ -189,7 +189,7 @@ Reboot the device:
 sudo reboot
 ```
 
-Wait until the Raspberry Pi boots again and reconnect through SSH.
+Wait until the Raspberry Pi boots again.
 
 ---
 
@@ -207,7 +207,7 @@ This installs all required libraries and dependencies.
 
 # 10. Disable Wi-Fi (MUST)
 
-If the device uses a cellular connection instead of Wi-Fi, disable Wi-Fi:
+Disable Wi-Fi:
 
 ```bash
 sudo nmcli radio wifi off
@@ -259,7 +259,7 @@ journalctl -u weather.service -f
 
 ---
 
-## Restart Service
+## Restart Service if there are any issues in logs
 
 After changing code:
 

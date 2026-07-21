@@ -59,7 +59,7 @@ def log_no_time(message, log_path = LOG_PATH):
 
 def mark_session_start():
     with open(LOG_PATH, "a") as f:
-        f.write(f"=== SESSION START {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ===\n")
+        f.write(f"=== SESSION START ===\n")
 
 
 def get_logs():

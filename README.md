@@ -259,7 +259,7 @@ journalctl -u weather.service -f
 
 ---
 
-## Restart Service
+## Restart Service if there are any issues in logs
 
 After changing code:
 

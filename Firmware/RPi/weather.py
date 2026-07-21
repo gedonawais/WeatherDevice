@@ -191,6 +191,19 @@ def wait_for_uart(uart, timeout=5):
 
 
 
+def getFrameRate():
+    DEFAULT_FPS = 20
+    try:
+        response = requests.get("http://emea-edu.com/framerate/fps.txt", timeout=5)
+        fps = int(response.text.strip())
+    except Exception as e:
+        print(f"Failed to get frame rate from server: {e}. Using default {DEFAULT_FPS} FPS.")
+        fps = DEFAULT_FPS
+    
+    print(f"Using frame rate: {fps} FPS")
+
+
+
 
 # --- Pi + upload + GPIO setup + UART Battery Monitoring ---
 
@@ -203,10 +216,11 @@ uart = UARTComm(port='/dev/serial0', baudrate=9600)
 mark_session_start()
 
 try:
+    getFrameRate()
+
     while True:
         uart.send("SEND VOLTAGE")
         BatteryData = wait_for_uart(uart)
-
 
         if BatteryData is None:
             log_no_time("No response from ESP about Battery")

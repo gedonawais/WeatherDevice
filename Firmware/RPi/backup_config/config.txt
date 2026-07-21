@@ -52,6 +52,7 @@ dtoverlay=dwc2,dr_mode=host
 dtoverlay=legacy-gpio
 dtoverlay=w1-gpio
 
+dtoverlay=disable-wifi
 dtoverlay=disable-bt
 enable_uart=1
 hdmi_blanking=2

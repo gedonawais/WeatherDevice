@@ -1,7 +1,7 @@
 [Unit]
 Description=Weather Camera Service
-After=NetworkManager.service network-online.target
-Wants=network-online.target
+After=local-fs.target
+
 
 [Service]
 ExecStart=/usr/bin/python3 /home/WeatherDevice/Firmware/RPi/weather.py

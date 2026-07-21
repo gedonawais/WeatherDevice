@@ -132,7 +132,13 @@ git --version
 ---
 
 # 5. Download Weather Device Repository
+If you wish to enable Wifi use the following commands
 
+```bash
+sudo systemctl enable NetworkManager.service
+sudo systemctl start NetworkManager.service
+sudo nmcli radio wifi on
+```
 Move to the home directory:
 
 ```bash

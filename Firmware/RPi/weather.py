@@ -202,7 +202,7 @@ def getFrameRate():
         fps = DEFAULT_FPS
     
     print(f"Using frame rate: {fps} FPS")
-
+    return fps
 
 
 
@@ -217,17 +217,13 @@ uart = UARTComm(port='/dev/serial0', baudrate=9600)
 mark_session_start()
 
 try:
+    uart.send("SEND VOLTAGE\n")
+    BatteryData = wait_for_uart(uart)
 
-    while True:
-        uart.send("SEND VOLTAGE")
-        BatteryData = wait_for_uart(uart)
-
-        if BatteryData is None:
-            log_no_time("No response from ESP about Battery")
-            break
-        else:
-            log_no_time(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
-            break
+    if BatteryData is None:
+        log_no_time("No response from ESP about Battery")
+    else:
+        log_no_time(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
 
     uart.close()
     time.sleep(1)

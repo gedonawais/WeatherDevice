@@ -107,7 +107,8 @@ def sync_time_after_ppp():
         # Wait for chrony to connect to NTP servers after PPP comes up
         time.sleep(5)
         # Force chrony to immediately step the clock to the correct time
-        subprocess.run(["sudo", "chronyc", "makestep"], check=True)
+        subprocess.run(["chronyc", "waitsync", "20"], check=False)
+        subprocess.run(["chronyc", "makestep"], check=True)
         # Re-initialize logging so all future log entries use the corrected timestamp
         reinit_logging()
     except Exception as e:

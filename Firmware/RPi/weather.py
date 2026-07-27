@@ -230,7 +230,8 @@ try:
 
     
     FPS = getFrameRate()
-
+    time.sleep(1)
+    
     uart.send("SEND VOLTAGE\n")
     BatteryData = wait_for_uart(uart)
 

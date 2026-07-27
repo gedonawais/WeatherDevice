@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "Rpi_esp_iot")(type "KiCad")(uri "${KIPRJMOD}/Rpi_esp_iot.kicad_sym")(options "")(descr ""))
+  (lib (name "Custom_Library01")(type "KiCad")(uri "${KIPRJMOD}/lib/Custom_Library01.kicad_sym")(options "")(descr ""))
+)

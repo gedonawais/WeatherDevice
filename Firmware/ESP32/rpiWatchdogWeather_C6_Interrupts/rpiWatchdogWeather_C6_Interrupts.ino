@@ -7,19 +7,19 @@
 #define SHUTDOWN_COMPLETE_STATUS_FROM_RPI   2   // GPIO25 on RPi
 #define RPI_ENABLE                          14  // To enable power for RPi
 
+static String msg = "";
+static float Vbat = 0.0;
+bool Vbat_Sent = false;
 
-// Battery Monitoring
 const int BATTERY_PIN = 5;  
-
 const uint64_t PI_TIMEOUT              = 8ULL * 60 * 1000;      // 8 mins      
 const uint64_t WDT_TIMEOUT             = 2ULL * 60 * 1000;      // 2 mins      
 const uint64_t SHUTDOWN_TIMEOUT        = 3ULL * 60 * 1000;      // 3 mins    
-const uint64_t SLEEP_TIME              = 2ULL * 60 * 1000000;   // 20 mins 
+const uint64_t SLEEP_TIME              = 20ULL * 60 * 1000000;   // 20 mins 
 const uint64_t SLEEP_TIME_BATTERY_DIE  = 60ULL * 60 * 1000000;  // 60 mins    
 
 unsigned long PiStartTime = 0;
 unsigned long shutdownStart = 0;
-
 
 volatile bool imageSentFlag = false;
 void IRAM_ATTR imageSentISR() 
@@ -46,7 +46,7 @@ void setup()
   
   analogReadResolution(12);
   float raw = readBatteryRaw();
-  float Vbat = (0.005806 * raw) - 5.262;
+  Vbat = (0.005806 * raw) - 5.262;
   Serial.print("  Battery Voltage = ");
   Serial.print(Vbat, 2);
   Serial.println(" V");
@@ -63,30 +63,6 @@ void setup()
     esp_deep_sleep_start();
   } 
 
-  unsigned long waitStart = millis();
-  String msg = "";
-
-  // Wait up to 2 mins for a full line
-  while (millis() - waitStart < 120000) 
-  {
-    if (Serial0.available()) 
-    {
-      msg = Serial0.readStringUntil('\n');
-      msg.trim();
-      break;
-    }
-    delay(50);
-  }
-
-  if (msg == "SEND VOLTAGE") 
-  {
-    Serial0.println(Vbat);
-  } 
-  else 
-  {
-    Serial.println("No valid command from RPi about battery.");
-  }
-  
   esp_task_wdt_deinit();
   esp_task_wdt_init(&config);
   esp_task_wdt_add(NULL);
@@ -97,8 +73,23 @@ void setup()
 
 void loop() 
 {
-  checkPiTimeout();
   esp_task_wdt_reset();
+
+  if(Serial0.available() && !Vbat_Sent)
+  {
+    String cmd = Serial0.readStringUntil('\n');
+    cmd.trim();
+    Serial.print("DATA FRom RPI: ");
+    Serial.println(cmd);
+
+    if (cmd=="SEND VOLTAGE")
+    {
+      Serial0.println(Vbat);
+      Vbat_Sent = true;
+    }
+    esp_task_wdt_reset();
+  }
+  checkPiTimeout();
   delay(100);
   
   if(imageSentFlag) 
@@ -123,6 +114,7 @@ void loop()
         Serial.println("Pi shutdown timeout, proceeding anyway.");
         break;
       }
+      delay(10);
     }
 
     Serial.println("Pi shutdown confirmed / timeout reached");

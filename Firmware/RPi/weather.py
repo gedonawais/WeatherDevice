@@ -33,8 +33,8 @@ SHUTDOWN_COMPLETED = 25
 PULSE_TIME = 1
 MAX_RETRIES = 3
 RETRY_DELAY = 5 #seconds
-SSID = ""
-PW =""
+FPS = 20  # Default frame rate
+
 
 def trim_log_file(filepath, max_lines):
     try:
@@ -192,16 +192,19 @@ def wait_for_uart(uart, timeout=5):
 
 
 def getFrameRate():
-    DEFAULT_FPS = 20
     try:
         response = requests.get("http://emea-edu.com/framerate/fps.txt", timeout=5)
         fps = int(response.text.strip())
     except Exception as e:
-        print(f"Failed to get frame rate from server: {e}. Using default {DEFAULT_FPS} FPS.")
-        fps = DEFAULT_FPS
+        print(f"Failed to get frame rate from server: {e}. Using default {FPS}.")
+        fps = FPS
     
     print(f"Using frame rate: {fps} FPS")
     return fps
+
+def sendFrameRate():
+    uart.send(f"Frame Rate: {FPS}\n")
+    time.sleep(0.5)
 
 
 
@@ -234,7 +237,11 @@ try:
         os.system("sudo shutdown now")
     else:
         sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
-    
+
+
+    FPS = getFrameRate()
+    sendFrameRate()  # Send the frame rate to ESP32 for its own use
+
     # Capture image
     try:
         picam2 = Picamera2()

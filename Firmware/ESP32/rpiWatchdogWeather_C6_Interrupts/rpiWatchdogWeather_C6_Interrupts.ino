@@ -10,6 +10,7 @@
 static String msg = "";
 static float Vbat = 0.0;
 bool Vbat_Sent = false;
+bool FrameRate_Received = false;
 
 const int BATTERY_PIN = 5;  
 const uint64_t PI_TIMEOUT              = 8ULL * 60 * 1000;      // 8 mins      
@@ -74,13 +75,10 @@ void setup()
 void loop() 
 {
   esp_task_wdt_reset();
-
   if(Serial0.available() && !Vbat_Sent)
   {
     String cmd = Serial0.readStringUntil('\n');
     cmd.trim();
-    Serial.print("DATA FRom RPI: ");
-    Serial.println(cmd);
 
     if (cmd=="SEND VOLTAGE")
     {
@@ -89,6 +87,16 @@ void loop()
     }
     esp_task_wdt_reset();
   }
+
+  if (Serial0.available() && !FrameRate_Received)
+  {
+    String cmd = Serial0.readStringUntil('\n');
+    cmd.trim();
+    Serial.print("data from Rpi about FPS:");
+    Serial.println(cmd);
+    esp_task_wdt_reset();
+  }
+
   checkPiTimeout();
   delay(100);
   

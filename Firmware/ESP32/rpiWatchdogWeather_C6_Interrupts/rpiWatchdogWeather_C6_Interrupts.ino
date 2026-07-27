@@ -94,6 +94,7 @@ void loop()
     cmd.trim();
     Serial.print("data from Rpi about FPS:");
     Serial.println(cmd);
+    FrameRate_Received = true;
     esp_task_wdt_reset();
   }
 

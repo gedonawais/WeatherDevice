@@ -205,6 +205,7 @@ def getFrameRate():
 def sendFrameRate():
     uart.send(f"Frame Rate: {FPS}\n")
     time.sleep(0.5)
+    uart.close()
 
 
 
@@ -219,17 +220,6 @@ uart = UARTComm(port='/dev/serial0', baudrate=9600)
 mark_session_start()
 
 try:
-    uart.send("SEND VOLTAGE\n")
-    BatteryData = wait_for_uart(uart)
-
-    if BatteryData is None:
-        log_no_time("No response from ESP about Battery")
-    else:
-        log_no_time(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
-
-    uart.close()
-    time.sleep(1)
-
     ppp_process = sim_ppp.init_connection()
     if ppp_process is None:
         logging.error("No PPP connection. Shutting down")
@@ -238,9 +228,26 @@ try:
     else:
         sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
 
-
+    
     FPS = getFrameRate()
-    sendFrameRate()  # Send the frame rate to ESP32 for its own use
+
+    uart.send("SEND VOLTAGE\n")
+    BatteryData = wait_for_uart(uart)
+
+    if BatteryData is None:
+        logging.info("No response from ESP about Battery")
+    else:
+        logging.info(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
+    time.sleep(1)
+
+    uart.send(f"Frame Rate: {FPS}\n")
+    FPS_response = wait_for_uart(uart)
+    if FPS_response is None:
+        logging.info("No response from ESP about Frame Rate")
+    else:
+        logging.info(f"ESP32 Frame Rate: {FPS_response}")
+
+    uart.close()
 
     # Capture image
     try:

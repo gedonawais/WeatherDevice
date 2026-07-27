@@ -75,26 +75,26 @@ void setup()
 void loop() 
 {
   esp_task_wdt_reset();
-  if(Serial0.available() && !Vbat_Sent)
+  if(Serial0.available())
   {
     String cmd = Serial0.readStringUntil('\n');
     cmd.trim();
 
-    if (cmd=="SEND VOLTAGE")
+    if (cmd == "SEND VOLTAGE" && !Vbat_Sent)
     {
+      Serial.print("1st Data: ");
+      Serial.println(cmd);
       Serial0.println(Vbat);
       Vbat_Sent = true;
     }
-    esp_task_wdt_reset();
-  }
+    else if (cmd.startsWith("Frame Rate:") && !FrameRate_Received)
+    {
+      Serial.print("2nd Data: ");
+      Serial.println(cmd);
+      Serial0.println("Frame Rate Received By ESP32 Successfully");
+      FrameRate_Received = true;
+    }
 
-  if (Serial0.available() && !FrameRate_Received)
-  {
-    String cmd = Serial0.readStringUntil('\n');
-    cmd.trim();
-    Serial.print("data from Rpi about FPS:");
-    Serial.println(cmd);
-    FrameRate_Received = true;
     esp_task_wdt_reset();
   }
 

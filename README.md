@@ -211,8 +211,8 @@ This installs all required libraries and dependencies.
 
 ---
 
-# 10. Disable Wi-Fi (MUST)
-
+# 10. Disable Wi-Fi (Optional)
+Network Manager is already disabled so no need to run this
 Disable Wi-Fi:
 
 ```bash

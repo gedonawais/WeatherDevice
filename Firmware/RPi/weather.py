@@ -1,4 +1,3 @@
-#Weather1.py
 from picamera2 import Picamera2
 from PIL import Image
 import requests

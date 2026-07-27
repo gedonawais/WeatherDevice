@@ -235,9 +235,6 @@ try:
         os.system("sudo shutdown now")
     else:
         sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
-
-    
-    getFrameRate()
     
     # Capture image
     try:

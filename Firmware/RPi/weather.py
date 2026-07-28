@@ -220,6 +220,17 @@ uart = UARTComm(port='/dev/serial0', baudrate=9600)
 mark_session_start()
 
 try:
+    uart.send("SEND VOLTAGE\n")
+    BatteryData = wait_for_uart(uart)
+
+    if BatteryData is None:
+        logging.info("No response from ESP about Battery")
+    else:
+        logging.info(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
+    time.sleep(1)
+    uart.close()
+
+    
     ppp_process = sim_ppp.init_connection()
     if ppp_process is None:
         logging.error("No PPP connection. Shutting down")
@@ -231,16 +242,6 @@ try:
     
     #FPS = getFrameRate()
     #time.sleep(1)
-
-    print("Sending Voltage Command to ESP")
-    uart.send("SEND VOLTAGE\n")
-    BatteryData = wait_for_uart(uart)
-
-    if BatteryData is None:
-        logging.info("No response from ESP about Battery")
-    else:
-        logging.info(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
-    time.sleep(1)
 
     print("Sending Frame Rate Command to ESP")
     uart.send(f"Frame Rate: {FPS}\n")

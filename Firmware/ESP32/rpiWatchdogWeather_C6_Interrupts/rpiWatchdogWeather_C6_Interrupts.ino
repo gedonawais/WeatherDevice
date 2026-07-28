@@ -7,22 +7,21 @@
 #define SHUTDOWN_COMPLETE_STATUS_FROM_RPI   2   // GPIO25 on RPi
 #define RPI_ENABLE                          14  // To enable power for RPi
 
-static String msg = "";
-static float Vbat = 0.0;
-bool Vbat_Sent = false;
-bool FrameRate_Received = false;
+static float  Vbat          = 0.0;
+volatile bool Vbat_Sent     = false;
+volatile bool imageSentFlag = false;
+unsigned long PiStartTime   = 0;
+unsigned long shutdownStart = 0;
 
-const int BATTERY_PIN = 5;  
+
+const int      BATTERY_PIN = 5;  
 const uint64_t PI_TIMEOUT              = 8ULL * 60 * 1000;      // 8 mins      
 const uint64_t WDT_TIMEOUT             = 2ULL * 60 * 1000;      // 2 mins      
 const uint64_t SHUTDOWN_TIMEOUT        = 3ULL * 60 * 1000;      // 3 mins    
 const uint64_t SLEEP_TIME              = 20ULL * 60 * 1000000;   // 20 mins 
 const uint64_t SLEEP_TIME_BATTERY_DIE  = 60ULL * 60 * 1000000;  // 60 mins    
 
-unsigned long PiStartTime = 0;
-unsigned long shutdownStart = 0;
 
-volatile bool imageSentFlag = false;
 void IRAM_ATTR imageSentISR() 
 {
   imageSentFlag = true;
@@ -74,25 +73,19 @@ void setup()
 
 void loop() 
 {
-  esp_task_wdt_reset();
   if(Serial0.available())
   {
+    esp_task_wdt_reset();
     String cmd = Serial0.readStringUntil('\n');
     cmd.trim();
-
-    Serial.print("RX:");
-    Serial.println(cmd);
-
     if (cmd == "SEND VOLTAGE" && !Vbat_Sent)
     {
-      Serial.print("1st Data: ");
-      Serial.println(cmd);
       Serial0.println(Vbat);
       Vbat_Sent = true;
     }
-    esp_task_wdt_reset();
   }
 
+  esp_task_wdt_reset();
   checkPiTimeout();
   delay(100);
   

@@ -80,6 +80,9 @@ void loop()
     String cmd = Serial0.readStringUntil('\n');
     cmd.trim();
 
+    Serial.print("RX:");
+    Serial.println(cmd);
+
     if (cmd == "SEND VOLTAGE" && !Vbat_Sent)
     {
       Serial.print("1st Data: ");
@@ -87,14 +90,6 @@ void loop()
       Serial0.println(Vbat);
       Vbat_Sent = true;
     }
-    else if (cmd.startsWith("Frame Rate:") && !FrameRate_Received)
-    {
-      Serial.print("2nd Data: ");
-      Serial.println(cmd);
-      Serial0.println("Frame Rate Received By ESP32 Successfully");
-      FrameRate_Received = true;
-    }
-
     esp_task_wdt_reset();
   }
 

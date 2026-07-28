@@ -229,9 +229,10 @@ try:
         sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
 
     
-    FPS = getFrameRate()
-    time.sleep(1)
-    
+    #FPS = getFrameRate()
+    #time.sleep(1)
+
+    print("Sending Voltage Command to ESP")
     uart.send("SEND VOLTAGE\n")
     BatteryData = wait_for_uart(uart)
 
@@ -241,6 +242,7 @@ try:
         logging.info(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
     time.sleep(1)
 
+    print("Sending Frame Rate Command to ESP")
     uart.send(f"Frame Rate: {FPS}\n")
     FPS_response = wait_for_uart(uart)
     if FPS_response is None:

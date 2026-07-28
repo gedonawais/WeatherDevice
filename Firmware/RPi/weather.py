@@ -190,25 +190,6 @@ def wait_for_uart(uart, timeout=5):
     return None
 
 
-
-def getFrameRate():
-    try:
-        response = requests.get("http://emea-edu.com/framerate/fps.txt", timeout=5)
-        fps = int(response.text.strip())
-    except Exception as e:
-        print(f"Failed to get frame rate from server: {e}. Using default {FPS}.")
-        fps = FPS
-    
-    print(f"Using frame rate: {fps} FPS")
-    return fps
-
-def sendFrameRate():
-    uart.send(f"Frame Rate: {FPS}\n")
-    time.sleep(0.5)
-    uart.close()
-
-
-
 # --- Pi + upload + GPIO setup + UART Battery Monitoring ---
 
 GPIO.setmode(GPIO.BCM)
@@ -224,13 +205,12 @@ try:
     BatteryData = wait_for_uart(uart)
 
     if BatteryData is None:
-        logging.info("No response from ESP about Battery")
+        log_no_time("No response from ESP about Battery")
     else:
-        logging.info(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
+        log_no_time(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
     time.sleep(1)
     uart.close()
 
-    
     ppp_process = sim_ppp.init_connection()
     if ppp_process is None:
         logging.error("No PPP connection. Shutting down")
@@ -239,19 +219,6 @@ try:
     else:
         sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
 
-    
-    #FPS = getFrameRate()
-    #time.sleep(1)
-
-    print("Sending Frame Rate Command to ESP")
-    uart.send(f"Frame Rate: {FPS}\n")
-    FPS_response = wait_for_uart(uart)
-    if FPS_response is None:
-        logging.info("No response from ESP about Frame Rate")
-    else:
-        logging.info(f"ESP32 Frame Rate: {FPS_response}")
-
-    uart.close()
 
     # Capture image
     try:

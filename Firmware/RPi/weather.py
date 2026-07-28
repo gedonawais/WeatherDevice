@@ -209,8 +209,17 @@ try:
     else:
         log_no_time(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
     time.sleep(1)
-    uart.close()
 
+    uart.send("SEND CONFIG\n")
+    config_data = wait_for_uart(uart)
+
+    if config_data is None:
+        log_no_time("No response from ESP about Config")
+    else:
+        log_no_time(f"Config: {config_data}")
+    time.sleep(1)
+    uart.close()
+    
     ppp_process = sim_ppp.init_connection()
     if ppp_process is None:
         logging.error("No PPP connection. Shutting down")

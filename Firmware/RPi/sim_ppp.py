@@ -163,6 +163,7 @@ def init_connection():
         else:
             print("PPP failed, sending CFUN reset before retrying,,,")
             log_no_time("PPP failed, sending CFUN reset before retrying...")
+            set_cmnb_mode()
             reset_sim7070()
 
     print("All PPP attempts failed,aborting...")

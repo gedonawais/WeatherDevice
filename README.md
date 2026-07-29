@@ -4,7 +4,7 @@ This document explains how to set up the Raspberry Pi Zero 2W for the Weather De
 
 ---
 
-# 1. Install Raspberry Pi OS Lite
+# 1. Install Raspberry Pi OS Lite (64 Bit) without Desktop
 
 1. Download and install **Raspberry Pi OS Lite** using Raspberry Pi Imager.
 2. Flash the OS to the SD card.

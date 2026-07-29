@@ -16,6 +16,8 @@ import sim_ppp
 from uart_comm import UARTComm
 from io import BytesIO
 
+
+CONFIG_PATH = "/home/WeatherDevice/Firmware/RPi/config.json"
 LOG_PATH = "/home/WeatherDevice/Firmware/RPi/Logs/capture.log"
 IMAGE_PATH = "/home/WeatherDevice/Firmware/RPi/Images/picture.jpg"
 UPLOAD_IMAGE_PATH = "/home/WeatherDevice/Firmware/RPi/Images/out.jpg"
@@ -190,7 +192,39 @@ def wait_for_uart(uart, timeout=5):
     return None
 
 
-# --- Pi + upload + GPIO setup + UART Battery Monitoring ---
+def parse_config_line(data):
+    cameraId, location, ftpHost, ftpPort, ftpUser, ftpPass, ftpPath = data.strip().split(',')
+
+    return 
+{
+        "cameraId": cameraId.strip(),
+        "location": location.strip(),
+        "ftpHost": ftpHost.strip(),
+        "ftpPort": int(ftpPort.strip()),
+        "ftpUser": ftpUser.strip(),
+        "ftpPass": ftpPass.strip(),
+        "ftpPath": ftpPath.strip()
+    }
+
+
+def save_config(config, path=CONFIG_PATH):
+    with open(path, "w") as f:
+        json.dump(config, f, indent=4)
+
+
+def load_config(path=CONFIG_PATH):
+    with open(path) as f:
+        return json.load(f)
+
+
+def receive_and_save_config(line, path=CONFIG_PATH):
+    config = parse_config_line(line)
+    save_config(config, path)
+    return config
+
+
+
+#------------------ Main Execution -----------------
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(SIGNAL_TO_ESP32, GPIO.OUT, initial=GPIO.LOW)
@@ -216,7 +250,10 @@ try:
     if config_data is None:
         log_no_time("No response from ESP about Config")
     else:
-        log_no_time(f"Config: {config_data}")
+        print (f"Config: {config_data}")
+        config = receive_and_save_config(config_data)
+        log_no_time (f"Config received and saved: {config}")
+
     time.sleep(1)
     uart.close()
     

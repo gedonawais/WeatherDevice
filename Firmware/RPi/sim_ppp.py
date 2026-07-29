@@ -61,7 +61,7 @@ def reset_sim7070():
     log_no_time("Resetting SIM7070G with AT+CFUN=1,1...")
     try:
         ser = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=2)
-        ser.write(b'AT+CMNB=1\r\n')
+        ser.write(b'AT+CMNB=3\r\n')
         time.sleep(1)
         response = ser.read_all().decode(errors='ignore')
         print(response)

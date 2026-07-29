@@ -179,6 +179,7 @@ void handleSave()
   }
 
   prefs.putBool("configured", true);
+  prefs.putBool("configChanged", true);
 
   loadConfig();
 
@@ -297,14 +298,25 @@ void loop()
     }
     if (cmd == "SEND CONFIG")
     {
-      Serial.println("Sending Config");
-      Serial0.print(cameraId); Serial0.print(",");
-      Serial0.print(location); Serial0.print(",");
-      Serial0.print(ftpHost);  Serial0.print(",");
-      Serial0.print(ftpPort);  Serial0.print(",");
-      Serial0.print(ftpUser);  Serial0.print(",");
-      Serial0.print(ftpPass);  Serial0.print(",");
-      Serial0.println(ftpPath);
+      if (prefs.getBool("configChanged", false))        // checking for configChanged variable, if it doesn't exist mark it as false
+      {
+        Serial.println("Sending Config");
+        Serial0.print(cameraId); Serial0.print(",");
+        Serial0.print(location); Serial0.print(",");
+        Serial0.print(ftpHost);  Serial0.print(",");
+        Serial0.print(ftpPort);  Serial0.print(",");
+        Serial0.print(ftpUser);  Serial0.print(",");
+        Serial0.print(ftpPass);  Serial0.print(",");
+        Serial0.println(ftpPath);
+      }
+      else
+      {
+        Serial0.println("NO NEW CONFIG");
+      }
+    }
+    if (cmd == "CONFIG SAVED")
+    {
+      prefs.putBool("configChanged", false);            // marking it false again, so esp knows that configurations are not changed on next run
     }
   }
 

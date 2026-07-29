@@ -55,17 +55,25 @@ def check_sim_at(timeout=10):
         print("AT check failed")
         return False
 
-def reset_sim7070():
-    """Send CFUN reset to SIM7070G."""
-    print("Setting CMNB=3 and resetting SIM7070G...")
-    log_no_time("Setting CMNB=3 and resetting SIM7070G...")
+def set_cmnb_mode():
     try:
         ser = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=2)
         ser.write(b'AT+CMNB=3\r\n')
         time.sleep(1)
         response = ser.read_all().decode(errors='ignore')
+        ser.close()
         print(response)
-        
+    except Exception as e:
+        print("Failed to set CMNB mode")
+        log_no_time(f"Failed to set CMNB mode: {e}")
+
+
+def reset_sim7070():
+    """Send CFUN reset to SIM7070G."""
+    print("Resetting SIM7070G with AT+CFUN=1,1...")
+    log_no_time("Resetting SIM7070G with AT+CFUN=1,1...")
+    try:
+        ser = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=2)
         ser.write(b'AT+CFUN=1,1\r\n')
         time.sleep(1)
         resp = ser.read_all().decode(errors='ignore')
@@ -135,7 +143,9 @@ def start_ppp():
 def init_connection():
     power_on_sim()
     ensure_serial_free()
-
+    set_cmnb_mode()
+    reset_sim7070()
+    
     for attempt in range(MAX_PPP_RETRIES):
         print(f"PPP init attempt {attempt+1}...")
         if not check_sim_at(timeout=15):

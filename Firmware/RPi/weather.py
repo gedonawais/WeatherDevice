@@ -234,29 +234,35 @@ uart = UARTComm(port='/dev/serial0', baudrate=9600)
 mark_session_start()
 
 try:
-    uart.send("SEND VOLTAGE\n")
-    BatteryData = wait_for_uart(uart)
+    try:
+        uart.send("SEND VOLTAGE\n")
+        BatteryData = wait_for_uart(uart)
 
-    if BatteryData is None:
-        log_no_time("No response from ESP about Battery")
-    else:
-        log_no_time(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
-    time.sleep(1)
+        if BatteryData is None:
+            log_no_time("No response from ESP about Battery")
+        else:
+            log_no_time(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
 
-    uart.send("SEND CONFIG\n")
-    config_data = wait_for_uart(uart)
+        time.sleep(1)
 
-    if config_data is None:
-        log_no_time("No response from ESP about Config")
-    else:
-        print (f"Config: {config_data}")
-        config = receive_and_save_config(config_data)
-        uart.send("CONFIG SAVED\n")
-        log_no_time ("Config received and saved")
+        uart.send("SEND CONFIG\n")
+        config_data = wait_for_uart(uart)
 
-    time.sleep(1)
-    uart.close()
-    
+        if config_data is None:
+            log_no_time("No response from ESP about Config")
+        else:
+            print (f"Config: {config_data}")
+            config = receive_and_save_config(config_data)
+            uart.send("CONFIG SAVED\n")
+            log_no_time ("Config received and saved")
+
+        time.sleep(1)
+        uart.close()
+    except Exception as e:
+        print(f"UART Error: {e}")
+        logging.error(f"UART Error: {e}")
+
+
     ppp_process = sim_ppp.init_connection()
     if ppp_process is None:
         logging.error("No PPP connection. Shutting down")

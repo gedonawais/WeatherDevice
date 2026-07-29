@@ -148,11 +148,13 @@ def init_connection():
     
     for attempt in range(MAX_PPP_RETRIES):
         print(f"PPP init attempt {attempt+1}...")
-        set_cmnb_mode()
-        reset_sim7070()
+        
         if not check_sim_at(timeout=15):
-            log_no_time("SIM7070G not responding, sending CFUN reset...")
-
+            log_no_time("SIM7070G not responding, setting CMNB mode and sending CFUN reset...")
+            set_cmnb_mode()
+            reset_sim7070()
+            if not check_sim_at(timeout=15):
+                continue
         ppp = start_ppp()
         if ppp:
             print("PPP connetion established")

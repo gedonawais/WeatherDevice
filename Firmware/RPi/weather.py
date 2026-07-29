@@ -250,8 +250,10 @@ try:
 
         if config_data is None:
             log_no_time("No response from ESP about Config")
+        elif config_data == "NO NEW CONFIG":
+            log_no_time("No new config data")
+            print ("No new config data")
         else:
-            print (f"Config: {config_data}")
             config = receive_and_save_config(config_data)
             uart.send("CONFIG SAVED\n")
             log_no_time ("Config received and saved")

@@ -52,8 +52,11 @@ echo "      -> Serial console disabled, hardware UART enabled"
 # ── 7. Hardcode DNS (prevent pppd usepeerdns from overwriting) ───────────────
 echo "[7/7] Writing static DNS (Google) to /etc/resolv.conf..."
 sudo cp "$CONFIG_DIR/resolv.conf" /etc/resolv.conf
-sudo chattr +i /etc/resolv.conf   # make immutable so pppd cannot overwrite it
-echo "      -> /etc/resolv.conf (immutable)"
+if sudo chattr +i /etc/resolv.conf 2>/dev/null; then
+  echo "      -> /etc/resolv.conf (immutable)"
+else
+  echo "      -> /etc/resolv.conf written, but immutable flag not supported"
+fi
 
 echo ""
 echo "=== Done! ==="

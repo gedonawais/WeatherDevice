@@ -21,25 +21,16 @@ sudo pip install --break-system-packages -r "$(dirname "$0")/requirements.txt"
 
 echo "=== Disabling unnecessary services ==="
 
-for svc in \
-  NetworkManager.service \
-  NetworkManager-wait-online.service \
-  cloud-init-main.service \
-  cloud-init-local.service \
-  cloud-init.service \
-  cloud-config.service \
-  cloud-final.service \
-  cloud-init-hotplugd.socket
-do
-  if systemctl list-unit-files | grep -q "^${svc}"; then
-    echo "Disabling $svc"
-    sudo systemctl disable --now "$svc" || true
-  else
-    echo "Skipping $svc (not found)"
-  fi
-done
+sudo systemctl disable NetworkManager.service || true
+sudo systemctl disable NetworkManager-wait-online.service || true
 
-sudo mkdir -p /etc/cloud
+sudo systemctl disable --now cloud-init-main.service || true
+sudo systemctl disable --now cloud-init-local.service || true
+sudo systemctl disable --now cloud-init.service || true
+sudo systemctl disable --now cloud-config.service || true
+sudo systemctl disable --now cloud-final.service || true
+sudo systemctl disable --now cloud-init-hotplugd.socket || true
+
 sudo touch /etc/cloud/cloud-init.disabled
 
 echo "=== Done! All dependencies installed and services optimized ==="

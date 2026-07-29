@@ -292,18 +292,18 @@ void loop()
     cmd.trim();
     if (cmd == "SEND VOLTAGE")
     {
-      Serial.print("DATA: "); Serial.println(cmd);
+      Serial.println("Sending Voltage");
       Serial0.println(Vbat);
     }
     if (cmd == "SEND CONFIG")
     {
       Serial.println("Sending Config");
-      Serial0.print(cameraId); Serial0.print("|");
-      Serial0.print(location); Serial0.print("|");
-      Serial0.print(ftpHost);  Serial0.print("|");
-      Serial0.print(ftpPort);  Serial0.print("|");
-      Serial0.print(ftpUser);  Serial0.print("|");
-      Serial0.print(ftpPass);  Serial0.print("|");
+      Serial0.print(cameraId); Serial0.print(",");
+      Serial0.print(location); Serial0.print(",");
+      Serial0.print(ftpHost);  Serial0.print(",");
+      Serial0.print(ftpPort);  Serial0.print(",");
+      Serial0.print(ftpUser);  Serial0.print(",");
+      Serial0.print(ftpPass);  Serial0.print(",");
       Serial0.println(ftpPath);
     }
   }

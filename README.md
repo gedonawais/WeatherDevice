@@ -31,7 +31,7 @@ Set Wireless LAN SSID and Password (for wifi)
 Navigate to:
 ```
 System Options
-    → Boot / Auto Login
+    → Auto Login
         → Console Autologin
 ```
 

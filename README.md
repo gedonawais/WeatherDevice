@@ -9,7 +9,6 @@ This document explains how to set up the Raspberry Pi Zero 2W for the Weather De
 1. Download and install **Raspberry Pi OS Lite** using Raspberry Pi Imager.
 2. Flash the OS to the SD card.
 3. Before writing the image, configure:
-   - Enable SSH
    - Set username and password
    - Configure Wi-Fi (optional)
 
@@ -26,9 +25,10 @@ Open the Raspberry Pi configuration tool:
 ```bash
 sudo raspi-config
 ```
+Set System Date and Time, WLAN Country in Localisation menu
+Set Wireless LAN SSID and Password (for wifi)
 
 Navigate to:
-
 ```
 System Options
     → Boot / Auto Login
@@ -39,7 +39,6 @@ Select console auto login.
 
 This allows the Raspberry Pi to automatically log in after boot.
 
-Also, set System Date and Time in Localisation menu
 
 ---
 

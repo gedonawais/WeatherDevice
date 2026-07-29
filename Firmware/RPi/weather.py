@@ -195,8 +195,7 @@ def wait_for_uart(uart, timeout=5):
 def parse_config_line(data):
     cameraId, location, ftpHost, ftpPort, ftpUser, ftpPass, ftpPath = data.strip().split(',')
 
-    return 
-{
+    return {
         "cameraId": cameraId.strip(),
         "location": location.strip(),
         "ftpHost": ftpHost.strip(),

@@ -316,6 +316,7 @@ void loop()
     }
     if (cmd == "CONFIG SAVED")
     {
+      Serial.println("Making flag false again");
       prefs.putBool("configChanged", false);            // marking it false again, so esp knows that configurations are not changed on next run
     }
   }

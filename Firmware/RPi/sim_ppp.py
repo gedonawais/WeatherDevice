@@ -57,6 +57,8 @@ def check_sim_at(timeout=10):
 
 def set_cmnb_mode():
     try:
+        print("Setting CMNB mode")
+        log_no_time("Setting CMNB mode")
         ser = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=2)
         ser.write(b'AT+CMNB=3\r\n')
         time.sleep(1)

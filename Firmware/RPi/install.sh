@@ -21,20 +21,21 @@ sudo pip install --break-system-packages -r "$(dirname "$0")/requirements.txt"
 
 echo "=== Disabling unnecessary services ==="
 
-# NetworkManager wait-online can cause boot delays
-sudo systemctl disable NetworkManager-wait-online.service 2>/dev/null || true
-sudo systemctl stop NetworkManager-wait-online.service 2>/dev/null || true
+# Disable wait-online
+sudo systemctl disable --now NetworkManager-wait-online.service 2>/dev/null || true
 
-# Disable NetworkManager only if PPP handles connectivity
-sudo systemctl disable NetworkManager.service 2>/dev/null || true
-sudo systemctl stop NetworkManager.service 2>/dev/null || true
+# Disable NetworkManager only if something else manages networking
+# sudo systemctl disable --now NetworkManager.service 2>/dev/null || true
 
-# Disable cloud-init services
-sudo systemctl disable cloud-init-local.service 2>/dev/null || true
-sudo systemctl disable cloud-init-network.service 2>/dev/null || true
-sudo systemctl disable cloud-init.service 2>/dev/null || true
-sudo systemctl disable cloud-config.service 2>/dev/null || true
-sudo systemctl disable cloud-final.service 2>/dev/null || true
-sudo systemctl disable cloud-init-hotplugd.socket 2>/dev/null || true
+# Disable cloud-init
+sudo systemctl disable --now cloud-init-local.service 2>/dev/null || true
+sudo systemctl disable --now cloud-init-network.service 2>/dev/null || true
+sudo systemctl disable --now cloud-init.service 2>/dev/null || true
+sudo systemctl disable --now cloud-config.service 2>/dev/null || true
+sudo systemctl disable --now cloud-final.service 2>/dev/null || true
+sudo systemctl disable --now cloud-init-hotplugd.socket 2>/dev/null || true
+
+# Prevent cloud-init from starting again
+sudo touch /etc/cloud/cloud-init.disabled
 
 echo "=== Done! All dependencies installed and services optimized ==="

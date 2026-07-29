@@ -21,21 +21,11 @@ sudo pip install --break-system-packages -r "$(dirname "$0")/requirements.txt"
 
 echo "=== Disabling unnecessary services ==="
 
-# Disable wait-online
-sudo systemctl disable --now NetworkManager-wait-online.service 2>/dev/null || true
 
-# Disable NetworkManager only if something else manages networking
-# sudo systemctl disable --now NetworkManager.service 2>/dev/null || true
+sudo systemctl disable --now NetworkManager.service
+sudo systemctl disable --now NetworkManager-wait-online.service
+sudo systemctl disable --now cloud-init-main.service
+sudo systemctl disable --now cloud-init-local.service
 
-# Disable cloud-init
-sudo systemctl disable --now cloud-init-local.service 2>/dev/null || true
-sudo systemctl disable --now cloud-init-network.service 2>/dev/null || true
-sudo systemctl disable --now cloud-init.service 2>/dev/null || true
-sudo systemctl disable --now cloud-config.service 2>/dev/null || true
-sudo systemctl disable --now cloud-final.service 2>/dev/null || true
-sudo systemctl disable --now cloud-init-hotplugd.socket 2>/dev/null || true
-
-# Prevent cloud-init from starting again
-sudo touch /etc/cloud/cloud-init.disabled
 
 echo "=== Done! All dependencies installed and services optimized ==="

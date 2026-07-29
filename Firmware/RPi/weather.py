@@ -252,7 +252,7 @@ try:
         print (f"Config: {config_data}")
         config = receive_and_save_config(config_data)
         uart.send("CONFIG SAVED\n")
-        log_no_time (f"Config received and saved: {config}")
+        log_no_time ("Config received and saved")
 
     time.sleep(1)
     uart.close()

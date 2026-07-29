@@ -57,8 +57,8 @@ def check_sim_at(timeout=10):
 
 def reset_sim7070():
     """Send CFUN reset to SIM7070G."""
-    print("Resetting SIM7070G with AT+CFUN=1,1...")
-    log_no_time("Resetting SIM7070G with AT+CFUN=1,1...")
+    print("Setting CMNB=3 and resetting SIM7070G...")
+    log_no_time("Setting CMNB=3 and resetting SIM7070G...")
     try:
         ser = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=2)
         ser.write(b'AT+CMNB=3\r\n')

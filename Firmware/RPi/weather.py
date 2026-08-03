@@ -218,6 +218,17 @@ def save_config(config, path=CONFIG_PATH):
 
 
 def load_config(path=CONFIG_PATH):
+    if not os.path.exists(path):
+        return {
+            "cameraId": "",
+            "location": "",
+            "ftpHost": "",
+            "ftpPort": 21,
+            "ftpUser": "",
+            "ftpPass": "",
+            "ftpPath": "/",
+            "protocol": "ftp"
+        }
     with open(path) as f:
         config = json.load(f)
 

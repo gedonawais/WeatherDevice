@@ -17,7 +17,9 @@ CFUN_REBOOT_WAIT = 10  # seconds for module to restart
 def log_no_time(message, log_path = "/home/WeatherDevice/Firmware/RPi/Logs/capture.log"):
     with open(log_path, "a") as f:
         f.write(f"{message}\n")
-        
+
+
+
 def power_on_sim():
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(PWRKEY_PIN, GPIO.OUT)

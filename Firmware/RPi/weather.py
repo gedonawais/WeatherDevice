@@ -37,6 +37,12 @@ MAX_RETRIES = 3
 RETRY_DELAY = 5 #seconds
 FPS = 20  # Default frame rate
 
+logging.basicConfig(
+    filename=LOG_PATH,
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s: %(message)s",
+    filemode="a"
+)
 
 def trim_log_file(filepath, max_lines):
     try:
@@ -105,17 +111,34 @@ def reinit_logging():
 
 def sync_time_after_ppp():
     try:
-        # Wait for chrony to connect to NTP servers after PPP comes up
         time.sleep(5)
-        # Force chrony to immediately step the clock to the correct time
-        subprocess.run(["chronyc", "waitsync", "20"], check=False)
-        subprocess.run(["chronyc", "makestep"], check=True)
-        # Re-initialize logging so all future log entries use the corrected timestamp
-        reinit_logging()
-    except Exception as e:
-        reinit_logging()
-        logging.error(f"Time sync failed: {e}")
 
+        result = subprocess.run(
+            ["chronyc", "waitsync", "20"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        logging.info(f"chronyc waitsync stdout: {result.stdout.strip()}")
+        logging.info(f"chronyc waitsync stderr: {result.stderr.strip()}")
+
+        result2 = subprocess.run(
+            ["chronyc", "makestep"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=15
+        )
+        logging.info(f"chronyc makestep stdout: {result2.stdout.strip()}")
+        logging.info(f"chronyc makestep stderr: {result2.stderr.strip()}")
+
+    except subprocess.TimeoutExpired:
+        logging.error("Time sync timed out")
+    except Exception as e:
+        logging.error(f"Time sync failed: {e}")
+    finally:
+        reinit_logging()
 
 
 def uploadLogs():
@@ -222,6 +245,17 @@ def receive_and_save_config(line, path=CONFIG_PATH):
     return config
 
 
+def wait_for_internet(host="8.8.8.8", retries=10, delay=2):
+    for _ in range(retries):
+        result = subprocess.run(
+            ["ping", "-c", "1", host],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        if result.returncode == 0:
+            return True
+        time.sleep(delay)
+    return False
 
 #------------------ Main Execution -----------------
 
@@ -271,7 +305,11 @@ try:
         print("PPP connection failed. Shutting Down")
         os.system("sudo shutdown now")
     else:
-        sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
+        if wait_for_internet():
+            sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
+        else:
+            logging.error("Internet not available after PPP.")
+            print("Internet not available after PPP.")
 
 
     # Capture image

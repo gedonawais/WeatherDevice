@@ -21,29 +21,21 @@ def log_no_time(message, log_path = "/home/WeatherDevice/Firmware/RPi/Logs/captu
 
 def ensure_dns():
     try:
-        ppp_resolv = "/etc/ppp/resolv.conf"
-        system_resolv = "/etc/resolv.conf"
-
-        dns_lines = []
-
-        if os.path.exists(ppp_resolv):
-            with open(ppp_resolv, "r") as f:
-                dns_lines = [line for line in f.readlines() if line.strip().startswith("nameserver")]
-
-        if not dns_lines:
-            dns_lines = [
-                "nameserver 8.8.8.8\n",
-                "nameserver 1.1.1.1\n"
-            ]
-
-        with open(system_resolv, "w") as f:
-            f.writelines(dns_lines)
-
-        log_no_time(f"DNS configured: {''.join(dns_lines).strip()}")
-        return True
+        result = subprocess.run(
+            ["sudo", "cp", "/etc/ppp/resolv.conf", "/etc/resolv.conf"],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            log_no_time("Copied /etc/ppp/resolv.conf to /etc/resolv.conf")
+            return True
+        else:
+            log_no_time(f"Failed to copy DNS config: {result.stderr}")
+            return False
     except Exception as e:
-        log_no_time(f"Failed to configure DNS: {e}")
+        log_no_time(f"Failed to copy DNS config: {e}")
         return False
+    
 
 def power_on_sim():
     GPIO.setmode(GPIO.BCM)

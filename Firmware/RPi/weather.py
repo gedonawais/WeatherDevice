@@ -162,11 +162,11 @@ def uploadLogs(config):
                 print("Unexpected FTP response")
 
         except error_perm as e:
-            print("Permission or FTP error")
-            logging.error(f"Permission or FTP error: {e}")
+            print(f"Upload Failed {type(e).__name__}: {e}")
+            logging.error(f"Upload failed: {type(e).__name__}: {e}")
         except Exception as e:
-            print(f"Upload Failed {e}")
-            logging.error(f"Upload failed: {e}")
+            print(f"Upload Failed {type(e).__name__}: {e}")
+            logging.error(f"Upload failed: {type(e).__name__}: {e}")
 
         finally:
             try:

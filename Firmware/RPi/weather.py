@@ -462,7 +462,6 @@ try:
     GPIO.output(SIGNAL_TO_ESP32, GPIO.LOW)
     print("Signaled ESP32 that image was sent.")
 
-    keep_last_two_sessions()
     # Wait for shutdown
     print("Waiting for shutdown signal from ESP32")
     while True:
@@ -479,6 +478,7 @@ try:
             except Exception as e:
                 logging.error(f"Error closing PPP connection: {e}")
 
+            keep_last_two_sessions()
             time.sleep(1)
             os.system("sudo shutdown now")
         time.sleep(0.5)

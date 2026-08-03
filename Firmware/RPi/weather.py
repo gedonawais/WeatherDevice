@@ -21,6 +21,7 @@ CONFIG_PATH = "/home/WeatherDevice/Firmware/RPi/config.json"
 LOG_PATH = "/home/WeatherDevice/Firmware/RPi/Logs/capture.log"
 IMAGE_PATH = "/home/WeatherDevice/Firmware/RPi/Images/picture.jpg"
 UPLOAD_IMAGE_PATH = "/home/WeatherDevice/Firmware/RPi/Images/out.jpg"
+
 UPLOAD_URL = "https://emea-edu.com/camera1/upload.php"
 file_path = "/home/WeatherDevice/Firmware/RPi/out_pipeline.json"
 
@@ -366,18 +367,29 @@ try:
     for attempt in range(1, MAX_RETRIES):
         try:
             ftp = FTP()
+            logging.info(f"Connecting to FTP {config['ftpHost']}:{config['ftpPort']}")
             ftp.connect(config["ftpHost"], config["ftpPort"])
+
+            logging.info("Logging in to FTP")
             ftp.login(config["ftpUser"], config["ftpPass"])
+
             ftp.set_pasv(True)
+
+            logging.info(f"Changing directory to {config['ftpPath']}")
             ftp.cwd(config["ftpPath"])
 
             nameImage = f"Image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
             json = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
 
+            logging.info(f"Uploading image: images/{nameImage}")
             with open('/home/WeatherDevice/Firmware/RPi/Images/out.jpg', 'rb') as f:
                 resp1 = ftp.storbinary(f'STOR images/{nameImage}', f)
+
+            logging.info(f"Uploading json: json/{json}")
             with open('/home/WeatherDevice/Firmware/RPi/out_pipeline.json', 'rb') as j:
                 resp2 = ftp.storbinary(f'STOR json/{json}', j)
+
+            logging.info("Uploading log file: Capture.log")
             with open(LOG_PATH, 'rb') as k:
                 resp3 = ftp.storbinary('STOR Capture.log', k)
 

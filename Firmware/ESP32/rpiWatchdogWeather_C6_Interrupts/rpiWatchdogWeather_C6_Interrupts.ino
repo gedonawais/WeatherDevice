@@ -193,6 +193,7 @@ void handleSave()
   prefs.putUInt("ftpPort", newPort);
   prefs.putString("ftpUser", newFtpUser);
   prefs.putString("ftpPath", newFtpPath);
+  prefs.putString("protocol", newProtocol);
 
   if (newFtpPass.length() > 0) 
   {
@@ -329,11 +330,12 @@ void loop()
         Serial0.print(ftpPort);  Serial0.print(",");
         Serial0.print(ftpUser);  Serial0.print(",");
         Serial0.print(ftpPass);  Serial0.print(",");
-        Serial0.println(ftpPath);
+        Serial0.print(ftpPath);  Serial0.print(",");
         Serial0.println(protocol);
       }
       else
       {
+        Serial.println("No new config");
         Serial0.println("NO NEW CONFIG");
       }
     }

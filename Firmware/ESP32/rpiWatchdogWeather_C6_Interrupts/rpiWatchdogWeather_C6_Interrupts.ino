@@ -187,6 +187,7 @@ void handleSave()
     return;
   }
 
+
   prefs.putString("cameraId", newCameraId);
   prefs.putString("location", newLocation);
   prefs.putString("ftpHost", newFtpHost);

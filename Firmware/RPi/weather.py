@@ -151,7 +151,7 @@ def uploadLogs(config):
             logs = get_logs()
             data = logs.encode()
             k = BytesIO(data)
-            resp = ftp.storbinary('STOR LOGS.log', k)
+            resp = ftp.storbinary('STOR Capture.log', k)
             k.close()
 
             if resp.startswith('226'):
@@ -379,7 +379,7 @@ try:
             with open('/home/WeatherDevice/Firmware/RPi/out_pipeline.json', 'rb') as j:
                 resp2 = ftp.storbinary(f'STOR json/{json}', j)
             with open(LOG_PATH, 'rb') as k:
-                resp3 = ftp.storbinary('STOR LOGS.log', k)
+                resp3 = ftp.storbinary('STOR Capture.log', k)
 
 
             # FTP returns a text message — '226 Transfer complete' means success

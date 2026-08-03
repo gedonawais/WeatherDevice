@@ -22,10 +22,6 @@ LOG_PATH = "/home/WeatherDevice/Firmware/RPi/Logs/capture.log"
 IMAGE_PATH = "/home/WeatherDevice/Firmware/RPi/Images/picture.jpg"
 UPLOAD_IMAGE_PATH = "/home/WeatherDevice/Firmware/RPi/Images/out.jpg"
 UPLOAD_URL = "https://emea-edu.com/camera1/upload.php"
-FTP_DIR = "ftp.metops.net"
-FTP_USER = "gedonsoft"
-FTP_PWD = "loHtWAkvpDjEC47RzmhjC"
-FTP_FOLDER = "upload/camera1"
 file_path = "/home/WeatherDevice/Firmware/RPi/out_pipeline.json"
 
 
@@ -267,6 +263,8 @@ GPIO.setup(SHUTDOWN_COMPLETED, GPIO.OUT, initial=GPIO.HIGH)
 
 uart = UARTComm(port='/dev/serial0', baudrate=9600)
 mark_session_start()
+config = load_config()
+
 
 try:
     try:

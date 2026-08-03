@@ -16,7 +16,7 @@ import logging
 import sim_ppp
 from uart_comm import UARTComm
 from io import BytesIO
-
+import socket
 
 CONFIG_PATH = "/home/WeatherDevice/Firmware/RPi/config.json"
 LOG_PATH = "/home/WeatherDevice/Firmware/RPi/Logs/capture.log"
@@ -244,15 +244,24 @@ def receive_and_save_config(line, path=CONFIG_PATH):
     return config
 
 
-def wait_for_internet(host="8.8.8.8", retries=10, delay=2):
+def wait_for_internet(host="8.8.8.8", dns_host="emea-edu.com", retries=10, delay=2):
     for _ in range(retries):
-        result = subprocess.run(
+        ip_ok = subprocess.run(
             ["ping", "-c", "1", host],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
-        )
-        if result.returncode == 0:
+        ).returncode == 0
+
+        dns_ok = False
+        try:
+            socket.gethostbyname(dns_host)
+            dns_ok = True
+        except socket.gaierror:
+            dns_ok = False
+
+        if ip_ok and dns_ok:
             return True
+
         time.sleep(delay)
     return False
 

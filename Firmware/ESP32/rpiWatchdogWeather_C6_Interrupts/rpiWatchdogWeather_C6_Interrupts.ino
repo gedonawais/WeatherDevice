@@ -31,7 +31,7 @@ const uint64_t SLEEP_TIME_BATTERY_DIE  = 60ULL * 60 * 1000000;  // 60 mins  us
 const unsigned long CONFIG_TIMEOUT_MS  = 3UL   * 60 * 1000;   // 3 mins in milliseconds
 
 // Global Config Values
-String cameraId, location, ftpHost, ftpUser, ftpPass, ftpPath = "/";
+String cameraId, location, ftpHost, ftpUser, ftpPass, ftpPath = "/", protocol = "ftp";
 uint32_t ftpPort = 21;
 
 WebServer server(80);
@@ -63,6 +63,7 @@ void loadConfig()
   ftpUser  = prefs.getString("ftpUser", "");
   ftpPass  = prefs.getString("ftpPass", "");
   ftpPath  = prefs.getString("ftpPath", "/");
+  protocol = prefs.getString("protocol", "ftp");
 }
 
 void stopConfigPortal() 
@@ -82,7 +83,8 @@ void handleRoot()
   String ftpUser  = prefs.getString("ftpUser", "");
   String ftpPath  = prefs.getString("ftpPath", "/");
   uint32_t ftpPort = prefs.getUInt("ftpPort", 21);
-
+  String protocol = prefs.getString("protocol", "ftp");
+  
   String page = R"rawliteral(
 <!DOCTYPE html>
 <html>
@@ -105,6 +107,13 @@ void handleRoot()
     FTP Port:<br>
     <input name="ftpPort" type="number" value="%FTP_PORT%" required><br><br>
 
+    Protocol:<br>
+    <select name="protocol" required>
+      <option value="ftp" %FTP_SELECTED%>FTP</option>
+      <option value="sftp" %SFTP_SELECTED%>SFTP</option>
+    </select><br><br>
+
+
     FTP Username:<br>
     <input name="ftpUser" value="%FTP_USER%"><br><br>
 
@@ -114,6 +123,7 @@ void handleRoot()
     FTP Path:<br>
     <input name="ftpPath" value="%FTP_PATH%"><br><br>
 
+    
     <button type="submit">Save</button>
   </form>
 </body>
@@ -126,7 +136,9 @@ void handleRoot()
   page.replace("%FTP_PORT%", String(ftpPort));
   page.replace("%FTP_USER%", ftpUser);
   page.replace("%FTP_PATH%", ftpPath);
-
+  page.replace("%FTP_SELECTED%", protocol == "ftp" ? "selected" : "");
+  page.replace("%SFTP_SELECTED%", protocol == "sftp" ? "selected" : "");
+  
   server.send(200, "text/html", page);
 }
 
@@ -139,6 +151,7 @@ void handleSave()
   String newFtpUser  = server.arg("ftpUser");
   String newFtpPass  = server.arg("ftpPass");
   String newFtpPath  = server.arg("ftpPath");
+  String newProtocol = server.arg("protocol");
 
   newCameraId.trim();
   newLocation.trim();
@@ -147,6 +160,8 @@ void handleSave()
   newFtpUser.trim();
   newFtpPass.trim();
   newFtpPath.trim();
+  newProtocol.trim();
+  newProtocol.toLowerCase();
 
   if (newCameraId.length() == 0 || newFtpHost.length() == 0 || newFtpPort.length() == 0) 
   {
@@ -164,6 +179,12 @@ void handleSave()
   if (newFtpPath.length() == 0) 
   {
     newFtpPath = "/";
+  }
+
+  if (newProtocol != "ftp" && newProtocol != "sftp")
+  {
+    server.send(400, "text/html", "<h2>Protocol must be ftp or sftp.</h2>");
+    return;
   }
 
   prefs.putString("cameraId", newCameraId);
@@ -224,6 +245,7 @@ bool startNormalMode()
   Serial.println("FTP User: " + ftpUser);
   Serial.println("FTP Path: " + ftpPath);
   Serial.println("FTP Password length: " + String(ftpPass.length()));
+  Serial.println("Protocol: " + protocol);
 
   return true;
 }
@@ -308,6 +330,7 @@ void loop()
         Serial0.print(ftpUser);  Serial0.print(",");
         Serial0.print(ftpPass);  Serial0.print(",");
         Serial0.println(ftpPath);
+        Serial0.println(protocol);
       }
       else
       {

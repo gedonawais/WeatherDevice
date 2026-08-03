@@ -3,6 +3,7 @@ from PIL import Image
 import requests
 import RPi.GPIO as GPIO
 import time
+import paramiko
 from datetime import datetime
 from ftplib import FTP, error_perm
 from pathlib import Path
@@ -40,20 +41,6 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s: %(message)s",
     filemode="a"
 )
-
-def trim_log_file(filepath, max_lines):
-    try:
-        with open(filepath, "r") as f:
-            lines = f.readlines()
-    except FileNotFoundError:
-        return  # Nothing to trim
-
-    # Keep only last max_lines
-    lines = lines[-max_lines:]
-
-    # Overwrite file
-    with open(filepath, "w") as f:
-        f.writelines(lines)
 
 
 def log_no_time(message, log_path = LOG_PATH):
@@ -143,24 +130,24 @@ def uploadLogs(config):
     FTP_success = False
     for attempt in range(1, MAX_RETRIES):
         try:
-            ftp = FTP()
-            ftp.connect(config["ftpHost"], config["ftpPort"])
-            ftp.login(config["ftpUser"], config["ftpPass"])
-            ftp.set_pasv(True)
-            ftp.cwd(config["ftpPath"])
-
             logs = get_logs()
-            data = logs.encode()
-            k = BytesIO(data)
-            resp = ftp.storbinary('STOR Capture.log', k)
-            k.close()
+            resp = upload_log(config,logs,"Capture.log")
 
-            if resp.startswith('226'):
-                print(f"FTP- Logs Upload Successful on attempt {attempt}")
+            if config.get("protocol", "ftp").lower() == "sftp":
+                print(f"SFTP- Logs Upload Successful on attempt {attempt}")
+                logging.info(f"SFTP- Logs Upload Successful on attempt {attempt}")
                 FTP_success = True
                 break
+
             else:
-                print("Unexpected FTP response")
+                if resp.startswith('226'):
+                    print(f"FTP- Logs Upload Successful on attempt {attempt}")
+                    logging.info(f"FTP- Logs Upload Successful on attempt {attempt}")
+                    FTP_success = True
+                    break
+                else:
+                    print("Unexpected FTP response")
+                    logging.error(f"Unexpected FTP response: {resp}")
 
         except error_perm as e:
             print(f"Upload Failed {type(e).__name__}: {e}")
@@ -169,11 +156,6 @@ def uploadLogs(config):
             print(f"Upload Failed {type(e).__name__}: {e}")
             logging.error(f"Upload failed: {type(e).__name__}: {e}")
 
-        finally:
-            try:
-                ftp.quit()
-            except:
-                pass
 
         if attempt < MAX_RETRIES:
             time.sleep(RETRY_DELAY)
@@ -216,7 +198,7 @@ def wait_for_uart(uart, timeout=5):
 
 
 def parse_config_line(data):
-    cameraId, location, ftpHost, ftpPort, ftpUser, ftpPass, ftpPath = data.strip().split(',')
+    cameraId, location, ftpHost, ftpPort, ftpUser, ftpPass, ftpPath, protocol = data.strip().split(',')
 
     return {
         "cameraId": cameraId.strip(),
@@ -225,7 +207,8 @@ def parse_config_line(data):
         "ftpPort": int(ftpPort.strip()),
         "ftpUser": ftpUser.strip(),
         "ftpPass": ftpPass.strip(),
-        "ftpPath": ftpPath.strip()
+        "ftpPath": ftpPath.strip(),
+        "protocol": protocol.strip().lower()
     }
 
 
@@ -236,7 +219,12 @@ def save_config(config, path=CONFIG_PATH):
 
 def load_config(path=CONFIG_PATH):
     with open(path) as f:
-        return json.load(f)
+        config = json.load(f)
+
+    if "prtocol" not in config:
+        config["protocol"] = "ftp"
+
+    return config
 
 
 def receive_and_save_config(line, path=CONFIG_PATH):
@@ -256,6 +244,67 @@ def wait_for_internet(host="8.8.8.8", retries=10, delay=2):
             return True
         time.sleep(delay)
     return False
+
+
+def upload_file(config, local_path, remote_path):
+    protocol = config.get("protocol", "ftp").lower()
+
+    if protocol == "sftp":
+        transport = paramiko.Transport((config["ftpHost"], config["ftpPort"]))
+        transport.connect(username=config["ftpUser"], password=config["ftpPass"])
+        sftp = paramiko.SFTPClient.from_transport(transport)
+
+        full_remote_path = f"{config['ftpPath'].rstrip('/')}/{remote_path}"
+        sftp.put(local_path, full_remote_path)
+
+        sftp.close()
+        transport.close()
+        return True
+
+    else:
+        ftp = FTP(timeout=60)
+        ftp.connect(config["ftpHost"], config["ftpPort"])
+        ftp.login(config["ftpUser"], config["ftpPass"])
+        ftp.set_pasv(True)
+        ftp.cwd(config["ftpPath"])
+
+        with open(local_path, "rb") as f:
+            resp = ftp.storbinary(f"STOR {remote_path}", f)
+
+        ftp.quit()
+        return resp
+
+
+
+def upload_log(config, log_text, remote_name="Capture.log"):
+    protocol = config.get("protocol", "ftp").lower()
+
+    if protocol == "sftp":
+        transport = paramiko.Transport((config["ftpHost"], config["ftpPort"]))
+        transport.connect(username=config["ftpUser"], password=config["ftpPass"])
+        sftp = paramiko.SFTPClient.from_transport(transport)
+
+        full_remote_path = f"{config['ftpPath'].rstrip('/')}/{remote_name}"
+        with sftp.open(full_remote_path, "w") as remote_file:
+            remote_file.write(log_text)
+
+        sftp.close()
+        transport.close()
+        return True
+
+    else:
+        ftp = FTP(timeout=60)
+        ftp.connect(config["ftpHost"], config["ftpPort"])
+        ftp.login(config["ftpUser"], config["ftpPass"])
+        ftp.set_pasv(True)
+        ftp.cwd(config["ftpPath"])
+
+        bio = BytesIO(log_text.encode())
+        resp = ftp.storbinary(f"STOR {remote_name}", bio)
+        bio.close()
+
+        ftp.quit()
+        return resp
 
 #------------------ Main Execution -----------------
 
@@ -366,43 +415,31 @@ try:
     FTP_success = False
     for attempt in range(1, MAX_RETRIES):
         try:
-            ftp = FTP()
-            logging.info(f"Connecting to FTP {config['ftpHost']}:{config['ftpPort']}")
-            ftp.connect(config["ftpHost"], config["ftpPort"])
-
-            logging.info("Logging in to FTP")
-            ftp.login(config["ftpUser"], config["ftpPass"])
-
-            ftp.set_pasv(True)
-
-            logging.info(f"Changing directory to {config['ftpPath']}")
-            ftp.cwd(config["ftpPath"])
-
             nameImage = f"Image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-            json = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            json_name = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
 
-            logging.info(f"Uploading image: images/{nameImage}")
-            with open('/home/WeatherDevice/Firmware/RPi/Images/out.jpg', 'rb') as f:
-                resp1 = ftp.storbinary(f'STOR images/{nameImage}', f)
+            logging.info(f"Uploading image via {config.get('protocol', 'ftp')}: images/{nameImage}")
+            resp1 = upload_file(config, '/home/WeatherDevice/Firmware/RPi/Images/out.jpg', f'images/{nameImage}')
 
-            logging.info(f"Uploading json: json/{json}")
-            with open('/home/WeatherDevice/Firmware/RPi/out_pipeline.json', 'rb') as j:
-                resp2 = ftp.storbinary(f'STOR json/{json}', j)
+            logging.info(f"Uploading json via {config.get('protocol', 'ftp')}: json/{json_name}")
+            resp2 = upload_file(config, '/home/WeatherDevice/Firmware/RPi/out_pipeline.json', f'json/{json_name}')
 
-            logging.info("Uploading log file: Capture.log")
-            with open(LOG_PATH, 'rb') as k:
-                resp3 = ftp.storbinary('STOR Capture.log', k)
-
-
-            # FTP returns a text message — '226 Transfer complete' means success
-            if resp1.startswith('226') and resp2.startswith('226') and resp3.startswith('226'):
-                print(f"FTP- Image and JSON Upload Successful on attempt {attempt}")
-                logging.info(f"FTP- Image and JSON Upload Successful on attempt {attempt}")
+            if config.get("protocol", "ftp").lower() == "sftp":
+                print(f"SFTP- Image and JSON Upload Successful on attempt {attempt}")
+                logging.info(f"SFTP- Image and JSON Upload Successful on attempt {attempt}")
                 FTP_success = True
                 break
+
             else:
-                print("Unexpected FTP response")
-                logging.error(f"Unexpected FTP response: {resp1}, {resp2}, {resp3}")
+                if resp1.startswith('226') and resp2.startswith('226'):
+                    print(f"FTP- Image and JSON Upload Successful on attempt {attempt}")
+                    logging.info(f"FTP- Image and JSON Upload Successful on attempt {attempt}")
+                    FTP_success = True
+                    break
+                else:
+                    print("Unexpected FTP response")
+                    logging.error(f"Unexpected FTP response: {resp1}, {resp2}")
+
 
         except error_perm as e:
             print(f"Upload Failed {type(e).__name__}: {e}")
@@ -410,15 +447,9 @@ try:
         except Exception as e:
             print(f"Upload Failed {type(e).__name__}: {e}")
             logging.error(f"Upload failed: {type(e).__name__}: {e}")
-        finally:
-            try:
-                ftp.quit()
-            except:
-                pass
 
         if attempt < MAX_RETRIES:
             time.sleep(RETRY_DELAY)
-
 
 
     # Upload image with retries
@@ -444,7 +475,7 @@ try:
             time.sleep(RETRY_DELAY)
 
     if not HTML_success and not FTP_success:
-        logging.error("All HTML and FTP upload attempts failed.SHUTTING DOWN")
+        logging.error(f"All HTML and {config.get('protocol', 'ftp').upper()} upload attempts failed. SHUTTING DOWN")
         with open(LOG_PATH, "a") as f:
             logs = get_logs()
             f.write(f"{logs}\n")
@@ -457,7 +488,7 @@ try:
             f.write(f"{logs}\n")
 
     elif not FTP_success:
-        logging.error("All FTP upload attempts failed.")
+        logging.error(f"All {config.get('protocol', 'ftp').upper()} upload attempts failed.")
         with open(LOG_PATH, "a") as f:
             logs = get_logs()
             f.write(f"{logs}\n")

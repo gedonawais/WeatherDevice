@@ -141,15 +141,16 @@ def sync_time_after_ppp():
         reinit_logging()
 
 
-def uploadLogs():
+def uploadLogs(config):
     #Upload to FTP with retries
     FTP_success = False
     for attempt in range(1, MAX_RETRIES):
         try:
-            ftp = FTP(FTP_DIR)
-            ftp.login(FTP_USER, FTP_PWD)
+            ftp = FTP()
+            ftp.connect(config["ftpHost"], config["ftpPort"])
+            ftp.login(config["ftpUser"], config["ftpPass"])
             ftp.set_pasv(True)
-            ftp.cwd(FTP_FOLDER)
+            ftp.cwd(config["ftpPath"])
 
             logs = get_logs()
             data = logs.encode()
@@ -284,13 +285,17 @@ try:
 
         if config_data is None:
             log_no_time("No response from ESP about Config")
+            config = load_config()
+
         elif config_data == "NO NEW CONFIG":
             log_no_time("No new config data")
             print ("No new config data")
+            config = load_config()
         else:
             config = receive_and_save_config(config_data)
             uart.send("CONFIG SAVED\n")
             log_no_time ("Config received and saved")
+
 
         time.sleep(1)
         uart.close()
@@ -315,8 +320,8 @@ try:
     # Capture image
     try:
         picam2 = Picamera2()
-        config = picam2.create_still_configuration(main={"size":(1280,720)})
-        picam2.configure(config)
+        camera_config = picam2.create_still_configuration(main={"size":(1280,720)})
+        picam2.configure(camera_config)
         picam2.start()
         picam2.capture_file(IMAGE_PATH)
         picam2.stop()
@@ -360,10 +365,11 @@ try:
     FTP_success = False
     for attempt in range(1, MAX_RETRIES):
         try:
-            ftp = FTP(FTP_DIR)
-            ftp.login(FTP_USER, FTP_PWD)
+            ftp = FTP()
+            ftp.connect(config["ftpHost"], config["ftpPort"])
+            ftp.login(config["ftpUser"], config["ftpPass"])
             ftp.set_pasv(True)
-            ftp.cwd(FTP_FOLDER)
+            ftp.cwd(config["ftpPath"])
 
             nameImage = f"Image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
             json = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
@@ -465,7 +471,7 @@ try:
             print("Got signal from ESP32 for shutdown")
             logging.info("Got Signal from ESP32 after sending Image,Uploading Logs and Going to SHUT DOWN")
             logging.info("===================================================================================\n")
-            uploadLogs()
+            uploadLogs(config)
 
             #Close ppp connection
             try:

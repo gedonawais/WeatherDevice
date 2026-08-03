@@ -3,6 +3,7 @@ import time
 import subprocess
 import serial
 import logging
+import os
 
 logging.basicConfig(level=logging.INFO)
 
@@ -18,7 +19,31 @@ def log_no_time(message, log_path = "/home/WeatherDevice/Firmware/RPi/Logs/captu
     with open(log_path, "a") as f:
         f.write(f"{message}\n")
 
+def ensure_dns():
+    try:
+        ppp_resolv = "/etc/ppp/resolv.conf"
+        system_resolv = "/etc/resolv.conf"
 
+        dns_lines = []
+
+        if os.path.exists(ppp_resolv):
+            with open(ppp_resolv, "r") as f:
+                dns_lines = [line for line in f.readlines() if line.strip().startswith("nameserver")]
+
+        if not dns_lines:
+            dns_lines = [
+                "nameserver 8.8.8.8\n",
+                "nameserver 1.1.1.1\n"
+            ]
+
+        with open(system_resolv, "w") as f:
+            f.writelines(dns_lines)
+
+        log_no_time(f"DNS configured: {''.join(dns_lines).strip()}")
+        return True
+    except Exception as e:
+        log_no_time(f"Failed to configure DNS: {e}")
+        return False
 
 def power_on_sim():
     GPIO.setmode(GPIO.BCM)
@@ -138,6 +163,7 @@ def start_ppp():
     for _ in range(60):
         if "ppp0" in subprocess.getoutput("ifconfig"):
             log_no_time("ppp0 is up!")
+            ensure_dns()
             return ppp_process
         time.sleep(1)
     log_no_time("PPP failed to come up")

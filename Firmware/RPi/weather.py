@@ -163,8 +163,10 @@ def uploadLogs(config):
 
         except error_perm as e:
             print("Permission or FTP error")
+            logging.error(f"Permission or FTP error: {e}")
         except Exception as e:
             print(f"Upload Failed {e}")
+            logging.error(f"Upload failed: {e}")
 
         finally:
             try:

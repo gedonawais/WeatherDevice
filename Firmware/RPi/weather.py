@@ -201,7 +201,7 @@ def wait_for_uart(uart, timeout=5):
 
 
 def parse_config_line(data):
-    cameraId, location, ftpHost, ftpPort, ftpUser, ftpPass, ftpPath, protocol = data.strip().split(',')
+    cameraId, location, ftpHost, ftpPort, ftpUser, ftpPass, ftpPath, protocol, framRate = data.strip().split(',')
 
     return {
         "cameraId": cameraId.strip(),
@@ -211,7 +211,8 @@ def parse_config_line(data):
         "ftpUser": ftpUser.strip(),
         "ftpPass": ftpPass.strip(),
         "ftpPath": ftpPath.strip(),
-        "protocol": protocol.strip().lower()
+        "protocol": protocol.strip().lower(),
+        "frameRate": int(framRate.strip())
     }
 
 
@@ -231,6 +232,7 @@ def load_config(path=CONFIG_PATH):
             "ftpPass": "",
             "ftpPath": "/", 
             "protocol": "ftp", 
+            "frameRate": 20,
             "secret": "GeiseitoFi"
         }
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -498,7 +500,8 @@ try:
                                          data={
                                              "secret": config.get("secret", "GeiseitoFi"),
                                              "camera_id": config.get("cameraId", ""),
-                                             "location": config.get("location", ""),}, 
+                                             "location": config.get("location", ""),
+                                             "frameRate": config.get("frameRate", 20),}, 
 
                                          files={
                                              "image": f, 

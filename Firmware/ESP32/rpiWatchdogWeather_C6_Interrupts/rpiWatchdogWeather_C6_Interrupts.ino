@@ -20,19 +20,20 @@ volatile bool imageSentFlag     = false;
 unsigned long PiStartTime       = 0;
 unsigned long shutdownStart     = 0;
 unsigned long configStartMillis = 0;
-RTC_DATA_ATTR bool skipConfigPortal = true;    // should be false
+RTC_DATA_ATTR bool skipConfigPortal = false;    // should be false
 
 const int      BATTERY_PIN = 5;  
-const uint64_t PI_TIMEOUT              = 60ULL * 60 * 1000;      // 8 mins   us   
-const uint64_t WDT_TIMEOUT             = 2ULL * 60 * 1000;      // 2 mins   us   
-const uint64_t SHUTDOWN_TIMEOUT        = 3ULL * 60 * 1000;      // 3 mins  us
-const uint64_t SLEEP_TIME              = 20ULL * 60 * 1000000;   // 20 mins us
-const uint64_t SLEEP_TIME_BATTERY_DIE  = 60ULL * 60 * 1000000;  // 60 mins  us
-const unsigned long CONFIG_TIMEOUT_MS  = 3UL   * 60 * 1000;   // 3 mins in milliseconds
+const uint64_t PI_TIMEOUT              = 8ULL * 60 * 1000;       // 8 mins    
+const uint64_t WDT_TIMEOUT             = 2ULL * 60 * 1000;       // 2 mins     
+const uint64_t SLEEP_TIME              = 20ULL * 60 * 1000000;   // 20 mins 
+const uint64_t SLEEP_TIME_BATTERY_DIE  = 60ULL * 60 * 1000000;   // 60 mins  
+const uint32_t CONFIG_TIMEOUT_MS       = 3UL   * 60 * 1000;     //  3 mins
+uint32_t SHUTDOWN_TIMEOUT              = 20UL  * 60 * 1000;     // will be fetched by the webpage and saved initilaised inside the normal mode function
 
 // Global Config Values
 String cameraId, location, ftpHost, ftpUser, ftpPass, ftpPath = "/", protocol = "ftp";
 uint32_t ftpPort = 21;
+uint32_t frameRate = 20;  // 20 mins
 
 WebServer server(80);
 Preferences prefs;
@@ -64,6 +65,7 @@ void loadConfig()
   ftpPass  = prefs.getString("ftpPass", "");
   ftpPath  = prefs.getString("ftpPath", "/");
   protocol = prefs.getString("protocol", "ftp");
+  frameRate = prefs.getUInt("frameRate", 20);
 }
 
 void stopConfigPortal() 
@@ -82,8 +84,9 @@ void handleRoot()
   String ftpHost  = prefs.getString("ftpHost", "");
   String ftpUser  = prefs.getString("ftpUser", "");
   String ftpPath  = prefs.getString("ftpPath", "/");
-  uint32_t ftpPort = prefs.getUInt("ftpPort", 21);
   String protocol = prefs.getString("protocol", "ftp");
+  uint32_t ftpPort = prefs.getUInt("ftpPort", 21);
+  uint32_t frameRate = prefs.getUInt("frameRate", 20);
   
   String page = R"rawliteral(
 <!DOCTYPE html>
@@ -123,6 +126,8 @@ void handleRoot()
     FTP Path:<br>
     <input name="ftpPath" value="%FTP_PATH%"><br><br>
 
+    Image Sending Frequency (mins): <br>
+    <input name="frameRate" value="%FRAME_RATE%"><br><br>
     
     <button type="submit">Save</button>
   </form>
@@ -138,6 +143,7 @@ void handleRoot()
   page.replace("%FTP_PATH%", ftpPath);
   page.replace("%FTP_SELECTED%", protocol == "ftp" ? "selected" : "");
   page.replace("%SFTP_SELECTED%", protocol == "sftp" ? "selected" : "");
+  page.replace("%FRAME_RATE%", String(frameRate));
   
   server.send(200, "text/html", page);
 }
@@ -152,6 +158,7 @@ void handleSave()
   String newFtpPass  = server.arg("ftpPass");
   String newFtpPath  = server.arg("ftpPath");
   String newProtocol = server.arg("protocol");
+  String newFrameRate = server.arg("frameRate");
 
   newCameraId.trim();
   newLocation.trim();
@@ -160,6 +167,7 @@ void handleSave()
   newFtpUser.trim();
   newFtpPass.trim();
   newFtpPath.trim();
+  newFrameRate.trim();
   newProtocol.trim();
   newProtocol.toLowerCase();
 
@@ -195,6 +203,7 @@ void handleSave()
   prefs.putString("ftpUser", newFtpUser);
   prefs.putString("ftpPath", newFtpPath);
   prefs.putString("protocol", newProtocol);
+  prefs.putUInt("frameRate", newFrameRate.toInt());
 
   if (newFtpPass.length() > 0) 
   {
@@ -238,6 +247,7 @@ bool startNormalMode()
   }
 
   loadConfig();
+  uint32_t SHUTDOWN_TIMEOUT = frameRate * 60 * 1000; // FrameRate in milliseconds
 
   Serial.println("Normal mode started");
   Serial.println("Camera ID: " + cameraId);
@@ -248,6 +258,7 @@ bool startNormalMode()
   Serial.println("FTP Path: " + ftpPath);
   Serial.println("FTP Password length: " + String(ftpPass.length()));
   Serial.println("Protocol: " + protocol);
+  Serial.println("Frame Rate: " + String(frameRate));
 
   return true;
 }
@@ -332,7 +343,8 @@ void loop()
         Serial0.print(ftpUser);  Serial0.print(",");
         Serial0.print(ftpPass);  Serial0.print(",");
         Serial0.print(ftpPath);  Serial0.print(",");
-        Serial0.println(protocol);
+        Serial0.print(protocol); Serial0.print(",");
+        Serial0.println(frameRate);
       }
       else
       {

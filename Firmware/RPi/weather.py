@@ -436,11 +436,11 @@ try:
 
     #Uploading FTP
     FTP_success = False
+    nameImage = f"Image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+    json_name = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+
     for attempt in range(1, MAX_RETRIES):
         try:
-            nameImage = f"Image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-            json_name = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-
             logging.info(f"Uploading image via {config.get('protocol', 'ftp')}: images/{nameImage}")
             resp1 = upload_file(config, '/home/WeatherDevice/Firmware/RPi/Images/out.jpg', f'images/{nameImage}')
 

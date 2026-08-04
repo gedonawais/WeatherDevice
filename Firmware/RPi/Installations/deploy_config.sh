@@ -44,7 +44,7 @@ echo "      -> /home/WeatherDevice/Firmware/RPi/Logs"
 echo "      -> /home/WeatherDevice/Firmware/RPi/Images"
 
 # ── 6. Disable serial console, enable hardware UART ─────────────────────────
-echo "[6/7] Configuring serial port (disable console, enable hardware UART)..."
+echo "[6/6] Configuring serial port (disable console, enable hardware UART)..."
 sudo raspi-config nonint do_serial_hw 0    # enable hardware serial port
 sudo raspi-config nonint do_serial_cons 1  # disable login shell over serial
 echo "      -> Serial console disabled, hardware UART enabled"

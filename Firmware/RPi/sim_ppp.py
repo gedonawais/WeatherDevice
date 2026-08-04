@@ -4,7 +4,6 @@ import subprocess
 import serial
 import logging
 
-logging.basicConfig(level=logging.INFO)
 
 PWRKEY_PIN = 17
 REG_PIN = 27
@@ -17,7 +16,29 @@ CFUN_REBOOT_WAIT = 10  # seconds for module to restart
 def log_no_time(message, log_path = "/home/WeatherDevice/Firmware/RPi/Logs/capture.log"):
     with open(log_path, "a") as f:
         f.write(f"{message}\n")
+
+def ensure_dns():
+    try:
+        result = subprocess.run(
+            ["sudo", "cp", "/etc/ppp/resolv.conf", "/etc/resolv.conf"],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            print("DNS copied successfully")
+            log_no_time("Copied /etc/ppp/resolv.conf to /etc/resolv.conf")
+            return True
+        else:
+            print("DNS copy failed:", result.stderr)
+            log_no_time(f"Failed to copy DNS config: {result.stderr}")
+            return False
         
+    except Exception as e:
+        print("DNS copy exception:", e)
+        log_no_time(f"Failed to copy DNS config: {e}")
+        return False
+    
+
 def power_on_sim():
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(PWRKEY_PIN, GPIO.OUT)
@@ -55,6 +76,21 @@ def check_sim_at(timeout=10):
         print("AT check failed")
         return False
 
+def set_cmnb_mode():
+    try:
+        print("Setting CMNB mode")
+        log_no_time("Setting CMNB mode")
+        ser = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=2)
+        ser.write(b'AT+CMNB=3\r\n')
+        time.sleep(1)
+        response = ser.read_all().decode(errors='ignore')
+        ser.close()
+        print(response)
+    except Exception as e:
+        print("Failed to set CMNB mode")
+        log_no_time(f"Failed to set CMNB mode: {e}")
+
+
 def reset_sim7070():
     """Send CFUN reset to SIM7070G."""
     print("Resetting SIM7070G with AT+CFUN=1,1...")
@@ -63,8 +99,9 @@ def reset_sim7070():
         ser = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=2)
         ser.write(b'AT+CFUN=1,1\r\n')
         time.sleep(1)
-        resp = ser.read_all().decode(errors='ignore')
+        ser.read_all().decode(errors='ignore')
         ser.close()
+
         print(f"Waiting {CFUN_REBOOT_WAIT}s for module to reboot...")
         time.sleep(CFUN_REBOOT_WAIT)
     except Exception as e:
@@ -120,6 +157,7 @@ def start_ppp():
     for _ in range(60):
         if "ppp0" in subprocess.getoutput("ifconfig"):
             log_no_time("ppp0 is up!")
+            ensure_dns()
             return ppp_process
         time.sleep(1)
     log_no_time("PPP failed to come up")
@@ -129,11 +167,13 @@ def start_ppp():
 def init_connection():
     power_on_sim()
     ensure_serial_free()
-
+    set_cmnb_mode()
+    
     for attempt in range(MAX_PPP_RETRIES):
         print(f"PPP init attempt {attempt+1}...")
+        
         if not check_sim_at(timeout=15):
-            log_no_time("SIM7070G not responding, sending CFUN reset...")
+            log_no_time("SIM7070G not responding, setting CMNB mode and sending CFUN reset...")
             reset_sim7070()
 
         ppp = start_ppp()

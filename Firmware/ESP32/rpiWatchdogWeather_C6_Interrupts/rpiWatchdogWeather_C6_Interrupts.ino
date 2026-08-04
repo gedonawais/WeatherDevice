@@ -273,7 +273,20 @@ void setup()
   pinMode(SEND_SHUTDOWN_SIGNAL_TO_RPI, OUTPUT);
   pinMode(SHUTDOWN_COMPLETE_STATUS_FROM_RPI, INPUT_PULLDOWN);
   pinMode(RPI_ENABLE, OUTPUT);
+  
   analogReadResolution(12);
+  delay(1000);
+  float raw = readBatteryRaw();
+  Vbat = (0.006161 * raw) - 6.11;
+  Serial.print("Raw = "); Serial.println(raw);
+  Serial.print("Battery Voltage = "); Serial.println(Vbat);
+
+  if (Vbat < 9.6)
+  {
+    Serial.println("Battery too low, going to sleep...");
+    esp_sleep_enable_timer_wakeup(SLEEP_TIME_BATTERY_DIE);
+    esp_deep_sleep_start();
+  }
 
   prefs.begin("cam-config", false);
   if (!skipConfigPortal)
@@ -296,21 +309,9 @@ void setup()
   }
   startNormalMode();
 
-  float raw = readBatteryRaw();
-  Vbat = (0.005806 * raw) - 5.262;
-  Serial.print("Battery Voltage = "); Serial.println(Vbat);
-  
-  if (Vbat >= 9)
-  {
-    digitalWrite(RPI_ENABLE, LOW);
-    delay(2000);
-    digitalWrite(RPI_ENABLE, HIGH);
-  }
-  else
-  {
-    esp_sleep_enable_timer_wakeup(SLEEP_TIME_BATTERY_DIE);
-    esp_deep_sleep_start();
-  } 
+  digitalWrite(RPI_ENABLE, LOW);
+  delay(2000);
+  digitalWrite(RPI_ENABLE, HIGH);
 
   esp_task_wdt_deinit();
   esp_task_wdt_init(&config);

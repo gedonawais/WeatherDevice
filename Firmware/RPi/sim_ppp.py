@@ -3,9 +3,7 @@ import time
 import subprocess
 import serial
 import logging
-import os
 
-logging.basicConfig(level=logging.INFO)
 
 PWRKEY_PIN = 17
 REG_PIN = 27
@@ -101,7 +99,7 @@ def reset_sim7070():
         ser = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=2)
         ser.write(b'AT+CFUN=1,1\r\n')
         time.sleep(1)
-        resp = ser.read_all().decode(errors='ignore')
+        ser.read_all().decode(errors='ignore')
         ser.close()
 
         print(f"Waiting {CFUN_REBOOT_WAIT}s for module to reboot...")

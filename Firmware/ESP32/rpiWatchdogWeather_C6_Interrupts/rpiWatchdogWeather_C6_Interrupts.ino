@@ -20,10 +20,10 @@ volatile bool imageSentFlag     = false;
 unsigned long PiStartTime       = 0;
 unsigned long shutdownStart     = 0;
 unsigned long configStartMillis = 0;
-RTC_DATA_ATTR bool skipConfigPortal = false;
+RTC_DATA_ATTR bool skipConfigPortal = true;    // should be false
 
 const int      BATTERY_PIN = 5;  
-const uint64_t PI_TIMEOUT              = 8ULL * 60 * 1000;      // 8 mins   us   
+const uint64_t PI_TIMEOUT              = 60ULL * 60 * 1000;      // 8 mins   us   
 const uint64_t WDT_TIMEOUT             = 2ULL * 60 * 1000;      // 2 mins   us   
 const uint64_t SHUTDOWN_TIMEOUT        = 3ULL * 60 * 1000;      // 3 mins  us
 const uint64_t SLEEP_TIME              = 20ULL * 60 * 1000000;   // 20 mins us

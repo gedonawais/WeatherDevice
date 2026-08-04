@@ -18,13 +18,13 @@ from uart_comm import UARTComm
 from io import BytesIO
 import socket
 
+
 CONFIG_PATH = "/home/WeatherDevice/Firmware/RPi/config.json"
 LOG_PATH = "/home/WeatherDevice/Firmware/RPi/Logs/capture.log"
 IMAGE_PATH = "/home/WeatherDevice/Firmware/RPi/Images/picture.jpg"
 UPLOAD_IMAGE_PATH = "/home/WeatherDevice/Firmware/RPi/Images/out.jpg"
-
-UPLOAD_URL = "https://emea-edu.com/camera1/upload.php"
-file_path = "/home/WeatherDevice/Firmware/RPi/out_pipeline.json"
+UPLOAD_URL = "https://emea-edu.com/cameraDashboard/upload.php"
+PIPELINE_JSON = "/home/WeatherDevice/Firmware/RPi/out_pipeline.json"
 
 
 SIGNAL_TO_ESP32 = 23
@@ -222,23 +222,27 @@ def save_config(config, path=CONFIG_PATH):
 
 def load_config(path=CONFIG_PATH):
     if not os.path.exists(path):
-        return {
-            "cameraId": "",
-            "location": "",
+        default_config = {
+            "cameraId": "", 
+            "location": "", 
             "ftpHost": "",
-            "ftpPort": 21,
-            "ftpUser": "",
+            "ftpPort": 21,  
+            "ftpUser": "", 
             "ftpPass": "",
-            "ftpPath": "/",
-            "protocol": "ftp"
+            "ftpPath": "/", 
+            "protocol": "ftp", 
+            "secret": "GeiseitoFi"
         }
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            json.dump(default_config, f, indent=4)
+        return default_config
+
     with open(path) as f:
         config = json.load(f)
 
-    if "protocol" not in config:
-        config["protocol"] = "ftp"
-
     return config
+
 
 
 def receive_and_save_config(line, path=CONFIG_PATH):
@@ -419,16 +423,16 @@ try:
         logging.error(f"Pipeline stderr:\n{e.stderr}")
 
 
-    # Appending JSON with temp and battery data
+    # Appending JSON with battery data
     try:
-        with open(file_path, "r") as f:
+        with open(PIPELINE_JSON, "r") as f:
             data = json.load(f)
 
         data["Parameters"] = {
             "Charging": BatteryData
         }
 
-        with open(file_path, "w") as f:
+        with open(PIPELINE_JSON, "w") as f:
             json.dump(data, f, indent=4)
 
     except Exception as e:
@@ -487,12 +491,23 @@ try:
     HTML_success = False
     for attempt in range(1, MAX_RETRIES):
         try:
-            with open(UPLOAD_IMAGE_PATH, 'rb') as f, open("/home/WeatherDevice/Firmware/RPi/out_pipeline.json", "rb") as j:
-                logs = get_logs()
-                response = requests.post(UPLOAD_URL, files={"image": f, "jsonfile": j}, timeout=(20,180))
+            with open(UPLOAD_IMAGE_PATH, 'rb') as f:
+                response = requests.post(UPLOAD_URL,
+
+                                         data={
+                                             "secret": config.get("secret", "GeiseitoFi"),
+                                             "camera_id": config.get("cameraId", ""),
+                                             "location": config.get("location", ""),}, 
+
+                                         files={
+                                             "image": f, 
+                                             }, 
+
+                                        timeout=(20,180))
+                
             if response.status_code == 200:
-                print (f"HTML- Image and JSON Upload successful on attempt {attempt}")
-                logging.info(f"HTML- Image and JSON Upload successful on attempt {attempt}")
+                print (f"HTML- Image Upload successful on attempt {attempt}")
+                logging.info(f"HTML- Image Upload successful on attempt {attempt}")
                 HTML_success = True
                 break
 

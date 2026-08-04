@@ -480,6 +480,7 @@ try:
                 logs = get_logs()
                 response = requests.post(UPLOAD_URL, files={"image": f, "jsonfile": j}, timeout=(20,180))
             if response.status_code == 200:
+                print (f"HTML- Image and JSON Upload successful on attempt {attempt}!")
                 logging.info(f"HTML- Image and JSON Upload successful on attempt {attempt}!")
                 HTML_success = True
                 break

@@ -439,6 +439,14 @@ try:
     nameImage = f"Image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
     json_name = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
 
+    logging.info(
+    f"FTP config: protocol={config.get('protocol')}, "
+    f"host={config.get('ftpHost')}, "
+    f"port={config.get('ftpPort')}, "
+    f"user={config.get('ftpUser')}, "
+    f"path={config.get('ftpPath')}"
+    )
+
     for attempt in range(1, MAX_RETRIES):
         try:
             logging.info(f"Uploading image via {config.get('protocol', 'ftp')}: images/{nameImage}")

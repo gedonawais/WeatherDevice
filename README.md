@@ -179,7 +179,7 @@ git config --global --add safe.directory /home/WeatherDevice
 Run the configuration deployment script:
 
 ```bash
-bash /home/WeatherDevice/Firmware/RPi/deploy_config.sh
+bash /home/WeatherDevice/Firmware/RPi/Installations/deploy_config.sh
 ```
 
 This installs required system files, services, and configurations.
@@ -203,7 +203,7 @@ Wait until the Raspberry Pi boots again.
 Run the installation script:
 
 ```bash
-bash /home/WeatherDevice/Firmware/RPi/install.sh
+bash /home/WeatherDevice/Firmware/RPi/Installations/install.sh
 ```
 
 This installs all required libraries and dependencies.

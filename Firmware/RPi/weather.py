@@ -232,7 +232,7 @@ def load_config(path=CONFIG_PATH):
     with open(path) as f:
         config = json.load(f)
 
-    if "prtocol" not in config:
+    if "protocol" not in config:
         config["protocol"] = "ftp"
 
     return config

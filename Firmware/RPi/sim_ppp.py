@@ -27,9 +27,11 @@ def ensure_dns():
             text=True
         )
         if result.returncode == 0:
+            print("Copied /etc/ppp/resolv.conf to /etc/resolv.conf")
             log_no_time("Copied /etc/ppp/resolv.conf to /etc/resolv.conf")
             return True
         else:
+            print(f"Failed to copy DNS config: {result.stderr}")
             log_no_time(f"Failed to copy DNS config: {result.stderr}")
             return False
     except Exception as e:

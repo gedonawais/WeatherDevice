@@ -23,12 +23,12 @@ unsigned long configStartMillis = 0;
 RTC_DATA_ATTR bool skipConfigPortal = false;    // should be false
 
 const int      BATTERY_PIN = 5;  
-const uint64_t PI_TIMEOUT              = 8ULL * 60 * 1000;       // 8 mins    
-const uint64_t WDT_TIMEOUT             = 2ULL * 60 * 1000;       // 2 mins     
-const uint64_t SLEEP_TIME              = 20ULL * 60 * 1000000;   // 20 mins 
-const uint64_t SLEEP_TIME_BATTERY_DIE  = 60ULL * 60 * 1000000;   // 60 mins  
-const uint32_t CONFIG_TIMEOUT_MS       = 3UL   * 60 * 1000;     //  3 mins
-uint32_t SHUTDOWN_TIMEOUT              = 20UL  * 60 * 1000;     // will be fetched by the webpage and saved initilaised inside the normal mode function
+const uint32_t PI_TIMEOUT              = 8UL * 60 * 1000;       // 8 mins    
+const uint32_t WDT_TIMEOUT             = 2UL  * 60 * 1000;       // 2 mins      
+const uint32_t SLEEP_TIME_BATTERY_DIE  = 60UL * 60 * 1000000;   // 60 mins  
+const uint32_t CONFIG_TIMEOUT_MS       = 3UL  * 60 * 1000;     // 3 mins
+const uint32_t SHUTDOWN_TIMEOUT        = 3UL  * 60 * 1000;      // 3 mins 
+uint32_t       SLEEP_TIME              = 20UL * 60 * 1000000;   // 20 mins, will also be fetched by webserver of esp and will be initilaised in function startNormalMode
 
 // Global Config Values
 String cameraId, location, ftpHost, ftpUser, ftpPass, ftpPath = "/", protocol = "ftp";
@@ -247,7 +247,7 @@ bool startNormalMode()
   }
 
   loadConfig();
-  SHUTDOWN_TIMEOUT = frameRate * 60 * 1000; // FrameRate in milliseconds
+  SLEEP_TIME = frameRate * 60 * 1000; // FrameRate in milliseconds
 
   Serial.println("Normal mode started");
   Serial.println("Camera ID: " + cameraId);

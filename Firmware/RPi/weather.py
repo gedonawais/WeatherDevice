@@ -168,7 +168,11 @@ def uploadLogs(config):
     HTML_success = False
     for attempt in range(1, MAX_RETRIES):
         try:
-            response = requests.post(UPLOAD_URL,data={"logs":logs}, timeout=60)
+            response = requests.post(UPLOAD_URL,
+                                     data={
+                                         "secret": config.get("secret", "GeiseitoFi"),
+                                         "camera_id": config.get("cameraId", ""),
+                                         "logs":logs}, timeout=60)
             if response.status_code == 200:
                 HTML_success = True
                 break

@@ -42,6 +42,9 @@ logging.basicConfig(
     filemode="a"
 )
 
+logging.getLogger("paramiko").setLevel(logging.WARNING)
+logging.getLogger("libcamera").setLevel(logging.WARNING)
+
 
 def log_no_time(message, log_path = LOG_PATH):
     with open(log_path, "a") as f:
@@ -479,8 +482,8 @@ try:
                 logs = get_logs()
                 response = requests.post(UPLOAD_URL, files={"image": f, "jsonfile": j}, timeout=(20,180))
             if response.status_code == 200:
-                print (f"HTML- Image and JSON Upload successful on attempt {attempt}!")
-                logging.info(f"HTML- Image and JSON Upload successful on attempt {attempt}!")
+                print (f"HTML- Image and JSON Upload successful on attempt {attempt}")
+                logging.info(f"HTML- Image and JSON Upload successful on attempt {attempt}")
                 HTML_success = True
                 break
 

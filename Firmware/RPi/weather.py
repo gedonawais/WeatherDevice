@@ -99,7 +99,7 @@ def reinit_logging():
 
 def sync_time_after_ppp():
     try:
-        time.sleep(5)
+        time.sleep(1)
 
         result = subprocess.run(
             ["chronyc", "waitsync", "20"],
@@ -108,9 +108,6 @@ def sync_time_after_ppp():
             text=True,
             timeout=30
         )
-        logging.info(f"chronyc waitsync stdout: {result.stdout.strip()}")
-        logging.info(f"chronyc waitsync stderr: {result.stderr.strip()}")
-
         result2 = subprocess.run(
             ["chronyc", "makestep"],
             check=False,
@@ -118,8 +115,11 @@ def sync_time_after_ppp():
             text=True,
             timeout=15
         )
-        logging.info(f"chronyc makestep stdout: {result2.stdout.strip()}")
-        logging.info(f"chronyc makestep stderr: {result2.stderr.strip()}")
+
+        if result.returncode == 0 and result2.returncode == 0:
+            logging.info("Time sync successful")
+        else:
+            logging.error("Time sync failed")
 
     except subprocess.TimeoutExpired:
         logging.error("Time sync timed out")

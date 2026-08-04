@@ -177,7 +177,7 @@ def init_connection():
 
         ppp = start_ppp()
         if ppp:
-            print("PPP connetion established")
+            print("PPP connection established")
             log_no_time("PPP connection established!")
             return ppp
         else:

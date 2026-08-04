@@ -396,6 +396,7 @@ try:
 
     # Capture image
     try:
+        print("Capturing image...")
         picam2 = Picamera2()
         camera_config = picam2.create_still_configuration(main={"size":(1280,720)})
         picam2.configure(camera_config)

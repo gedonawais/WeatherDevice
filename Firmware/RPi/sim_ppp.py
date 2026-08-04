@@ -26,7 +26,6 @@ def ensure_dns():
         )
         if result.returncode == 0:
             print("DNS copied successfully")
-            log_no_time("Copied /etc/ppp/resolv.conf to /etc/resolv.conf")
             return True
         else:
             print("DNS copy failed:", result.stderr)

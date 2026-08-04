@@ -43,6 +43,7 @@ logging.basicConfig(
 )
 
 logging.getLogger("paramiko").setLevel(logging.WARNING)
+logging.getLogger("picamera2").setLevel(logging.WARNING)
 logging.getLogger("libcamera").setLevel(logging.WARNING)
 
 

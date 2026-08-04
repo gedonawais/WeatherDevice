@@ -247,7 +247,7 @@ bool startNormalMode()
   }
 
   loadConfig();
-  uint32_t SHUTDOWN_TIMEOUT = frameRate * 60 * 1000; // FrameRate in milliseconds
+  SHUTDOWN_TIMEOUT = frameRate * 60 * 1000; // FrameRate in milliseconds
 
   Serial.println("Normal mode started");
   Serial.println("Camera ID: " + cameraId);

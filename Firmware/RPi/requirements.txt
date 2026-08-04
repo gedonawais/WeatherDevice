@@ -4,3 +4,4 @@ numpy
 onnxruntime
 pyserial
 opencv-python
+paramiko

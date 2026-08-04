@@ -246,7 +246,7 @@ def receive_and_save_config(line, path=CONFIG_PATH):
     return config
 
 
-def wait_for_internet(host="8.8.8.8", dns_host="emea-edu.com", retries=10, delay=2):
+def wait_for_internet(host="8.8.8.8", dns_host="google.com", retries=10, delay=1):
     for _ in range(retries):
         ip_ok = subprocess.run(
             ["ping", "-c", "1", host],

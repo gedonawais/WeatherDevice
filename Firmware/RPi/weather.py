@@ -126,11 +126,11 @@ def sync_time_after_ppp():
 
 
 def uploadLogs(config):
+    logs = get_logs()
     #Upload to FTP with retries
     FTP_success = False
     for attempt in range(1, MAX_RETRIES):
         try:
-            logs = get_logs()
             resp = upload_log(config,logs,"Capture.log")
 
             if config.get("protocol", "ftp").lower() == "sftp":
@@ -164,7 +164,6 @@ def uploadLogs(config):
     HTML_success = False
     for attempt in range(1, MAX_RETRIES):
         try:
-            logs = get_logs()
             response = requests.post(UPLOAD_URL,data={"logs":logs}, timeout=60)
             if response.status_code == 200:
                 HTML_success = True

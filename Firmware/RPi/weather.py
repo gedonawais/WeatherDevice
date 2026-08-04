@@ -505,7 +505,8 @@ try:
                                              "secret": config.get("secret", "GeiseitoFi"),
                                              "camera_id": config.get("cameraId", ""),
                                              "location": config.get("location", ""),
-                                             "frameRate": config.get("frameRate", 20),}, 
+                                             "frameRate": config.get("frameRate", 20),
+                                             "battery": BatteryData, }, 
 
                                          files={
                                              "image": f, 

@@ -1,0 +1,16 @@
+# Windows thumbnail cache
+Thumbs.db
+
+# Editor backup files
+*.save
+*.bak
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store

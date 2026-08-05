@@ -8,8 +8,9 @@
 #define IMAGE_SENT_SIGNAL_FROM_RPI          0   // GPIO23 on RPi
 #define SEND_SHUTDOWN_SIGNAL_TO_RPI         1   // GPIO24 on RPi
 #define SHUTDOWN_COMPLETE_STATUS_FROM_RPI   2   // GPIO25 on RPi
+#define BATTERY_PIN                         5   // Battery monitoring pin
 #define RPI_ENABLE                          14  // To enable power for RPi
-
+ 
 const char* apSSID = "ESP32-CAMERA-CONFIG";
 const char* apPassword = "12345678";
 
@@ -22,10 +23,10 @@ unsigned long shutdownStart     = 0;
 unsigned long configStartMillis = 0;
 RTC_DATA_ATTR bool skipConfigPortal = false;    // should be false
 
-const int      BATTERY_PIN = 5;  
+ 
 const uint32_t PI_TIMEOUT              = 8UL  * 60 * 1000;       // 8 mins    
 const uint32_t WDT_TIMEOUT             = 2UL  * 60 * 1000;       // 2 mins      
-const uint32_t CONFIG_TIMEOUT_MS       = 3UL  * 60 * 1000;     // 3 mins
+const uint32_t CONFIG_TIMEOUT_MS       = 3UL  * 60 * 1000;      // 3 mins
 const uint32_t SHUTDOWN_TIMEOUT        = 3UL  * 60 * 1000;      // 3 mins 
 const uint64_t SLEEP_TIME_BATTERY_DIE  = 60UL * 60 * 1000000;   // 60 mins  
 uint64_t       SLEEP_TIME              = 20UL * 60 * 1000000;   // 20 mins, will also be fetched by webserver of esp and will be initilaised in function startNormalMode

@@ -339,6 +339,22 @@ def upload_log(config, log_text, remote_name="Capture.log"):
         ftp.quit()
         return resp
 
+
+def get_device_id():
+    try:
+        with open('/proc/cpuinfo', 'r') as f:
+            for line in f:
+                if line.startswith('Serial'):
+                    return line.split(':')[1].strip()
+    except:
+        pass
+    # Fallback to eth0 MAC
+    try:
+        with open('/sys/class/net/eth0/address', 'r') as f:
+            return f.read().strip().replace(':', '')
+    except:
+        pass
+    return None
 #------------------ Main Execution -----------------
 
 GPIO.setmode(GPIO.BCM)
@@ -349,6 +365,8 @@ GPIO.setup(SHUTDOWN_COMPLETED, GPIO.OUT, initial=GPIO.HIGH)
 uart = UARTComm(port='/dev/serial0', baudrate=9600)
 mark_session_start()
 config = load_config()
+device_id = get_device_id()
+print(f"Device ID: {device_id}")
 
 
 try:

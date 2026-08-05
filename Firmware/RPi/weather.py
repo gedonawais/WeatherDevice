@@ -472,27 +472,28 @@ try:
 
         #------------- Send Pending Frame Rate to ESP32 if saved from last boot -------------
         pendingFrameRatePath = os.path.join(BASE_DIR, "pending_config.json")
-        try:
-            with open(pendingFrameRatePath, "r") as f:
-                pending_config = json.load(f) 
-            if not pending_config.get("confirmed"):
-                pending_fr = pending_config.get("frameRate")
-                logging.info(f"Sending pending frame rate {pending_fr}mins to ESP32")
-                uart.send(f"SET FRAMERATE {pending_fr}\n")
+        if os.path.exists(pendingFrameRatePath):
+            try:
+                with open(pendingFrameRatePath, "r") as f:
+                    pending_config = json.load(f) 
+                if not pending_config.get("confirmed"):
+                    pending_fr = pending_config.get("frameRate")
+                    logging.info(f"Sending pending frame rate {pending_fr}mins to ESP32")
+                    uart.send(f"SET FRAMERATE {pending_fr}\n")
 
-                ack = wait_for_uart(uart, timeout=5)
-                if ack == "FRAMERATE SAVED":
-                    logging.info(f"ESP32 confirmed frame rate {pending_fr}mins")
-                    config["frameRate"] = pending_fr
-                    save_config(config)
+                    ack = wait_for_uart(uart, timeout=5)
+                    if ack == "FRAMERATE SAVED":
+                        logging.info(f"ESP32 confirmed frame rate {pending_fr}mins")
+                        config["frameRate"] = pending_fr
+                        save_config(config)
 
-                    with open(pendingFrameRatePath, "w") as f:
-                        json.dump({"frameRate": pending_fr, "confirmed": True}, f)
-                else:
-                    logging.info(f"ESP32 did not confirm frame rate change. Response: {ack}")
+                        with open(pendingFrameRatePath, "w") as f:
+                            json.dump({"frameRate": pending_fr, "confirmed": True}, f)
+                    else:
+                        logging.info(f"ESP32 did not confirm frame rate change. Response: {ack}")
 
-        except Exception as e:
-            logging.error(f"Error sending pending frame rate to ESP32: {e}")
+            except Exception as e:
+                logging.error(f"Error sending pending frame rate to ESP32: {e}")
         
 
         uart.close()

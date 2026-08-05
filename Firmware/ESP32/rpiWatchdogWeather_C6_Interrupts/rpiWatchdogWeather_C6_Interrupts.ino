@@ -21,7 +21,7 @@ volatile bool imageSentFlag     = false;
 unsigned long PiStartTime       = 0;
 unsigned long shutdownStart     = 0;
 unsigned long configStartMillis = 0;
-RTC_DATA_ATTR bool skipConfigPortal = false;    // should be false
+RTC_DATA_ATTR bool skipConfigPortal = true;    // should be false
 
  
 const uint32_t PI_TIMEOUT              = 8UL  * 60 * 1000;       // 8 mins    

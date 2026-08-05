@@ -17,14 +17,18 @@ import sim_ppp
 from uart_comm import UARTComm
 from io import BytesIO
 import socket
+import sys  
 
 
-CONFIG_PATH = "/home/WeatherDevice/Firmware/RPi/config.json"
-LOG_PATH = "/home/WeatherDevice/Firmware/RPi/Logs/capture.log"
-IMAGE_PATH = "/home/WeatherDevice/Firmware/RPi/Images/picture.jpg"
-UPLOAD_IMAGE_PATH = "/home/WeatherDevice/Firmware/RPi/Images/out.jpg"
+BASE_DIR = "/home/WeatherDevice/Firmware/RPi"
+CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
+LOG_PATH = os.path.join(BASE_DIR, "Logs/capture.log")
+IMAGE_PATH = os.path.join(BASE_DIR, "Images/picture.jpg")
+OUTPUT_IMAGE_PATH = os.path.join(BASE_DIR, "Images/out.jpg")
+PIPELINE_JSON = os.path.join(BASE_DIR, "out_pipeline.json")
+
 UPLOAD_URL = "https://emea-edu.com/cameraDashboard/upload.php"
-PIPELINE_JSON = "/home/WeatherDevice/Firmware/RPi/out_pipeline.json"
+
 
 
 SIGNAL_TO_ESP32 = 23
@@ -136,7 +140,6 @@ def uploadLogs(config):
     for attempt in range(1, MAX_RETRIES):
         try:
             resp = upload_log(config,logs,"Capture.log")
-
             if config.get("protocol", "ftp").lower() == "sftp":
                 print(f"SFTP- Logs Upload Successful on attempt {attempt}")
                 logging.info(f"SFTP- Logs Upload Successful on attempt {attempt}")
@@ -172,6 +175,7 @@ def uploadLogs(config):
                                      data={
                                          "secret": config.get("secret", "GeiseitoFi"),
                                          "camera_id": config.get("cameraId", ""),
+                                         "deviceID": config.get("deviceID", ""),
                                          "logs":logs}, timeout=60)
             if response.status_code == 200:
                 HTML_success = True
@@ -205,8 +209,10 @@ def wait_for_uart(uart, timeout=5):
 
 
 def parse_config_line(data):
-    cameraId, location, ftpHost, ftpPort, ftpUser, ftpPass, ftpPath, protocol, framRate = data.strip().split(',')
-
+    parts = data.strip().split('|')
+    if len(parts) != 9:
+        raise ValueError(f"Expected 9 parts in config line, got {len(parts)}: {data}")
+    cameraId, location, ftpHost, ftpPort, ftpUser, ftpPass, ftpPath, protocol, framRate = parts
     return {
         "cameraId": cameraId.strip(),
         "location": location.strip(),
@@ -262,10 +268,16 @@ def load_config(path=CONFIG_PATH):
             json.dump(default_config, f, indent=4)
         return default_config
 
-    with open(path) as f:
-        config = json.load(f)
+    try:
+        with open(path) as f:
+            config = json.load(f)
+        return config
+    except Exception as e:
+        logging.error(f"Failed to load config: {e}")
+        os.remove(path)
+        return load_config(path)  # Retry loading after deletion
 
-    return config
+
 
 
 
@@ -307,25 +319,31 @@ def upload_file(config, local_path, remote_path):
         transport.connect(username=config["ftpUser"], password=config["ftpPass"])
         sftp = paramiko.SFTPClient.from_transport(transport)
 
-        full_remote_path = f"{config['ftpPath'].rstrip('/')}/{remote_path}"
-        sftp.put(local_path, full_remote_path)
-
-        sftp.close()
-        transport.close()
+        try:
+            full_remote_path = f"{config['ftpPath'].rstrip('/')}/{remote_path}"
+            sftp.put(local_path, full_remote_path)
+        finally:
+            sftp.close()
+            transport.close()
         return True
 
     else:
-        ftp = FTP(timeout=60)
-        ftp.connect(config["ftpHost"], config["ftpPort"])
-        ftp.login(config["ftpUser"], config["ftpPass"])
-        ftp.set_pasv(True)
-        ftp.cwd(config["ftpPath"])
+        ftp = None
+        try:
+            ftp = FTP(timeout=60)
+            ftp.connect(config["ftpHost"], config["ftpPort"])
+            ftp.login(config["ftpUser"], config["ftpPass"])
+            ftp.set_pasv(True)
+            ftp.cwd(config["ftpPath"])
 
-        with open(local_path, "rb") as f:
-            resp = ftp.storbinary(f"STOR {remote_path}", f)
+            with open(local_path, "rb") as f:
+                resp = ftp.storbinary(f"STOR {remote_path}", f)
 
-        ftp.quit()
+        finally:
+            if ftp:
+                ftp.quit()
         return resp
+    
 
 
 
@@ -337,30 +355,50 @@ def upload_log(config, log_text, remote_name="Capture.log"):
         transport.connect(username=config["ftpUser"], password=config["ftpPass"])
         sftp = paramiko.SFTPClient.from_transport(transport)
 
-        full_remote_path = f"{config['ftpPath'].rstrip('/')}/{remote_name}"
-        with sftp.open(full_remote_path, "w") as remote_file:
-            remote_file.write(log_text)
+        try:
+            full_remote_path = f"{config['ftpPath'].rstrip('/')}/{remote_name}"
+            with sftp.open(full_remote_path, "w") as remote_file:
+                remote_file.write(log_text)
 
-        sftp.close()
-        transport.close()
+        finally:
+            sftp.close()
+            transport.close()
         return True
 
     else:
-        ftp = FTP(timeout=60)
-        ftp.connect(config["ftpHost"], config["ftpPort"])
-        ftp.login(config["ftpUser"], config["ftpPass"])
-        ftp.set_pasv(True)
-        ftp.cwd(config["ftpPath"])
+        ftp = None
+        try:
+            ftp = FTP(timeout=60)
+            ftp.connect(config["ftpHost"], config["ftpPort"])
+            ftp.login(config["ftpUser"], config["ftpPass"])
+            ftp.set_pasv(True)
+            ftp.cwd(config["ftpPath"])
 
-        bio = BytesIO(log_text.encode())
-        resp = ftp.storbinary(f"STOR {remote_name}", bio)
-        bio.close()
+            bio = BytesIO(log_text.encode())
+            resp = ftp.storbinary(f"STOR {remote_name}", bio)
+            bio.close()
+            return resp
+        
+        finally:
+            if ftp:    
+                ftp.quit()
 
-        ftp.quit()
-        return resp
 
 
-#------------------ Main Execution -----------------
+
+def safeShutdown(reason=""):
+    if reason:
+        logging.error(f"Safe Shutdown initiated due to: {reason}")
+
+    try:
+        GPIO.cleanup()
+    except:
+        pass
+    os.system("sudo shutdown now")
+    sys.exit(0)
+
+
+#--------------------------------------------- Main Execution ------------------------------------------
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(SIGNAL_TO_ESP32, GPIO.OUT, initial=GPIO.LOW)
@@ -371,9 +409,9 @@ uart = UARTComm(port='/dev/serial0', baudrate=9600)
 mark_session_start()
 config = load_config()
 
-
-
 try:
+    BatteryData = "N/A"
+
     try:
         uart.send("SEND VOLTAGE\n")
         BatteryData = wait_for_uart(uart)
@@ -401,9 +439,9 @@ try:
             uart.send("CONFIG SAVED\n")
             log_no_time ("Config received and saved")
 
-
-        time.sleep(1)
         uart.close()
+        time.sleep(1)  #ensure UART is closed before proceeding
+
     except Exception as e:
         print(f"UART Error: {e}")
         logging.error(f"UART Error: {e}")
@@ -413,7 +451,7 @@ try:
     if ppp_process is None:
         logging.error("No PPP connection. Shutting down")
         print("PPP connection failed. Shutting Down")
-        os.system("sudo shutdown now")
+        safeShutdown("PPP connection failed")
     else:
         if wait_for_internet():
             sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
@@ -433,17 +471,29 @@ try:
         picam2.stop()
         picam2.close()
 
-        img = Image.open(IMAGE_PATH)
-        img.save(IMAGE_PATH)
         print("Image Captured")
         logging.info("Image captured")
 
     except Exception as e:
         print(f"Camera Error:{e}") 
-        logging.info(f"Camera Error:{e}")
-        os.system("sudo shutdown now")
+        logging.error(f"Camera Error:{e}")
+        safeShutdown("Camera Error")
     try:
-        subprocess.run(["python3","/home/WeatherDevice/Firmware/RPi/run_pipeline.py", "--input", "/home/WeatherDevice/Firmware/RPi/Images/picture.jpg", "--output", "/home/WeatherDevice/Firmware/RPi/Images/out.jpg", "--weather-onnx", "/home/WeatherDevice/Firmware/RPi/weathernet.onnx", "--classes", "/home/WeatherDevice/Firmware/RPi/class_to_idx.json", "--yolox-onnx", "/home/WeatherDevice/Firmware/RPi/model.onnx", "--yolox-classes", "/home/WeatherDevice/Firmware/RPi/classes.txt"], check=True, capture_output=True, text=True)
+        subprocess.run(
+        [
+        "python3",
+        os.path.join(BASE_DIR, "run_pipeline.py"),
+        "--input", IMAGE_PATH,
+        "--output", OUTPUT_IMAGE_PATH,
+        "--weather-onnx", os.path.join(BASE_DIR, "weathernet.onnx"),
+        "--classes", os.path.join(BASE_DIR, "class_to_idx.json"),
+        "--yolox-onnx", os.path.join(BASE_DIR, "model.onnx"),
+        "--yolox-classes", os.path.join(BASE_DIR, "classes.txt"),
+        ],
+    check=True,
+    capture_output=True,
+    text=True,
+)
         logging.info("Pipeline finished successfully")
 
     except subprocess.CalledProcessError as e:
@@ -483,10 +533,10 @@ try:
     for attempt in range(1, MAX_RETRIES):
         try:
             logging.info(f"Uploading image via {config.get('protocol', 'ftp')}: images/{nameImage}")
-            resp1 = upload_file(config, '/home/WeatherDevice/Firmware/RPi/Images/out.jpg', f'images/{nameImage}')
+            resp1 = upload_file(config, OUTPUT_IMAGE_PATH, f'images/{nameImage}')
 
             logging.info(f"Uploading json via {config.get('protocol', 'ftp')}: json/{json_name}")
-            resp2 = upload_file(config, '/home/WeatherDevice/Firmware/RPi/out_pipeline.json', f'json/{json_name}')
+            resp2 = upload_file(config, PIPELINE_JSON, f'json/{json_name}')
 
             if config.get("protocol", "ftp").lower() == "sftp":
                 print(f"SFTP- Image and JSON Upload Successful on attempt {attempt}")
@@ -520,7 +570,7 @@ try:
     HTML_success = False
     for attempt in range(1, MAX_RETRIES):
         try:
-            with open(UPLOAD_IMAGE_PATH, 'rb') as f:
+            with open(OUTPUT_IMAGE_PATH, 'rb') as f:
                 response = requests.post(UPLOAD_URL,
 
                                          data={
@@ -558,7 +608,7 @@ try:
         with open(LOG_PATH, "a") as f:
             logs = get_logs()
             f.write(f"{logs}\n")
-        os.system("sudo shutdown now")
+        safeShutdown("All HTML and FTP upload attempts failed")
 
     elif not HTML_success:
         logging.error("All HTML upload attempts failed.")
@@ -576,9 +626,13 @@ try:
     #------------------ Pulse ESP32 after successful upload -----------------
     GPIO.output(SIGNAL_TO_ESP32, GPIO.HIGH)
     print("Waiting for ESP32 to ACK....")
-    print ("Pi sees pin state:", GPIO.input(SHUTDOWN_FROM_ESP32))
+    ack_start = time.time()
+    ACK_TIMEOUT = 60  # seconds
+
     while GPIO.input(SHUTDOWN_FROM_ESP32) == GPIO.LOW:
-        print("Pin state:", GPIO.input(SHUTDOWN_FROM_ESP32))
+        if time.time() -ack_start > ACK_TIMEOUT:
+            logging.error("Timeout waiting for ACK from ESP32. Shutting down.")
+            break 
         time.sleep(0.1)
 
     GPIO.output(SIGNAL_TO_ESP32, GPIO.LOW)
@@ -586,6 +640,8 @@ try:
 
     # Wait for shutdown
     print("Waiting for shutdown signal from ESP32")
+    shutdown_wait_start = time.time()
+    SHUTDOWN_WAIT_TIMEOUT = 60  # seconds
     while True:
         if GPIO.input(SHUTDOWN_FROM_ESP32) == GPIO.HIGH:
             time.sleep(1)
@@ -602,10 +658,20 @@ try:
 
             keep_last_two_sessions()
             time.sleep(1)
-            os.system("sudo shutdown now")
+            safeShutdown("Received shutdown signal from ESP32")
+            break
+
+        if time.time() - shutdown_wait_start > SHUTDOWN_WAIT_TIMEOUT:
+            logging.error("Timeout waiting for shutdown signal from ESP32. Shutting Down anyway.")
+            uploadLogs(config)
+            keep_last_two_sessions()
+            time.sleep(1)    
+            safeShutdown("Timeout waiting for shutdown signal from ESP32")
+            break
+
         time.sleep(0.5)
 
 except Exception as e:
     print (e)
     logging.critical(f"Error: {e}")
-    os.system("sudo shutdown now")
+    safeShutdown(f"Unhandled Exception: {e}")

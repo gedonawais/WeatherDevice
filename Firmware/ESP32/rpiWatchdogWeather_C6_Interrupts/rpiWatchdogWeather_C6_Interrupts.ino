@@ -226,7 +226,7 @@ void handleSave()
 void startConfigPortal() 
 {
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(apSSID, apPassword);
+  WiFi.softAP(apSSID, apPassword, 1, true, 1); // hidden ssid, only 1 client connection
 
   Serial.println("Configuration mode started");
   Serial.print("Open: http://");
@@ -240,12 +240,12 @@ void startConfigPortal()
   configStartMillis = millis();
 }
 
-bool startNormalMode() 
+void startNormalMode() 
 {
   if (!isConfigured()) 
   {
     Serial.println("No valid configuration. Normal mode not started.");
-    return false;
+    return;
   }
 
   loadConfig();
@@ -261,8 +261,6 @@ bool startNormalMode()
   Serial.println("FTP Password length: " + String(ftpPass.length()));
   Serial.println("Protocol: " + protocol);
   Serial.println("Frame Rate: " + String(frameRate));
-
-  return true;
 }
 
 void setup() 
@@ -339,14 +337,14 @@ void loop()
       if (prefs.getBool("configChanged", false))        // checking for configChanged variable, if it doesn't exist mark it as false
       {
         Serial.println("Sending Config");
-        Serial0.print(cameraId); Serial0.print(",");
-        Serial0.print(location); Serial0.print(",");
-        Serial0.print(ftpHost);  Serial0.print(",");
-        Serial0.print(ftpPort);  Serial0.print(",");
-        Serial0.print(ftpUser);  Serial0.print(",");
-        Serial0.print(ftpPass);  Serial0.print(",");
-        Serial0.print(ftpPath);  Serial0.print(",");
-        Serial0.print(protocol); Serial0.print(",");
+        Serial0.print(cameraId); Serial0.print("|");
+        Serial0.print(location); Serial0.print("|");
+        Serial0.print(ftpHost);  Serial0.print("|");
+        Serial0.print(ftpPort);  Serial0.print("|");
+        Serial0.print(ftpUser);  Serial0.print("|");
+        Serial0.print(ftpPass);  Serial0.print("|");
+        Serial0.print(ftpPath);  Serial0.print("|");
+        Serial0.print(protocol); Serial0.print("|");
         Serial0.println(frameRate);
       }
       else
@@ -385,7 +383,7 @@ void loop()
       esp_task_wdt_reset();
       if (millis() - shutdownStart > SHUTDOWN_TIMEOUT)
       {
-        Serial.println("Pi shutdown timeout, proceeding anyway.");
+        Serial.println("Pi shutdown timeout, forcing power off.");
         break;
       }
       delay(10);
@@ -436,8 +434,4 @@ float readBatteryRaw()
   return total / (float)samples;
 }
 
-float readBatteryVoltage() 
-{
-  float raw = readBatteryRaw();
-  return (0.005806 * raw) - 5.262;
-}
+

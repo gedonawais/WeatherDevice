@@ -226,7 +226,7 @@ void handleSave()
 void startConfigPortal() 
 {
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(apSSID, apPassword, 1, true, 1); // hidden ssid, only 1 client connection
+  WiFi.softAP(apSSID, apPassword, 1, false, 1); // only 1 client connection
 
   Serial.println("Configuration mode started");
   Serial.print("Open: http://");

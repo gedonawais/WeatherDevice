@@ -469,21 +469,12 @@ try:
             uart.send("CONFIG SAVED\n")
             log_no_time ("Config received and saved")
 
-        uart.close()
-        time.sleep(1)  #ensure UART is closed before proceeding
 
-    except Exception as e:
-        print(f"UART Error: {e}")
-        logging.error(f"UART Error: {e}")
-
-
-    #------------- Send Pending Frame Rate to ESP32 if saved from last boot -------------
-    pendingFrameRatePath = os.path.join(BASE_DIR, "pending_config.json")
-    if os.path.exists(pendingFrameRatePath):
+        #------------- Send Pending Frame Rate to ESP32 if saved from last boot -------------
+        pendingFrameRatePath = os.path.join(BASE_DIR, "pending_config.json")
         try:
             with open(pendingFrameRatePath, "r") as f:
                 pending_config = json.load(f) 
-
             if not pending_config.get("confirmed"):
                 pending_fr = pending_config.get("frameRate")
                 logging.info(f"Sending pending frame rate {pending_fr}mins to ESP32")
@@ -500,9 +491,17 @@ try:
                 else:
                     logging.info(f"ESP32 did not confirm frame rate change. Response: {ack}")
 
-
         except Exception as e:
             logging.error(f"Error sending pending frame rate to ESP32: {e}")
+        
+
+        uart.close()
+        time.sleep(1)  #ensure UART is closed before proceeding
+
+    except Exception as e:
+        print(f"UART Error: {e}")
+        logging.error(f"UART Error: {e}")
+
 
 
     #------------------ Initialize PPP Connection -----------------

@@ -35,7 +35,8 @@ uint64_t       SLEEP_TIME              = 20UL * 60 * 1000000;   // 20 mins, will
 // Global Config Values
 String cameraId, location, ftpHost, ftpUser, ftpPass, ftpPath = "/", protocol = "ftp";
 uint32_t ftpPort = 21;
-uint32_t frameRate = 20;  // 20 mins
+uint32_t frameRate = 20;    // 20 mins
+uint32_t newFrameRate = 20;  // getting it from server (RPi)
 
 WebServer server(80);
 Preferences prefs;
@@ -327,11 +328,13 @@ void loop()
     esp_task_wdt_reset();
     String cmd = Serial0.readStringUntil('\n');
     cmd.trim();
+
     if (cmd == "SEND VOLTAGE")
     {
       Serial.println("Sending Voltage");
       Serial0.println(Vbat);
     }
+
     if (cmd == "SEND CONFIG")
     {
       if (prefs.getBool("configChanged", false))        // checking for configChanged variable, if it doesn't exist mark it as false
@@ -353,10 +356,30 @@ void loop()
         Serial0.println("NO NEW CONFIG");
       }
     }
+
     if (cmd == "CONFIG SAVED")
     {
       Serial.println("Making flag false again");
       prefs.putBool("configChanged", false);            // marking it false again, so esp knows that configurations are not changed on next run
+    }
+
+    if (cmd.startsWith("SET FRAMERATE"))
+    {
+      newFrameRate = cmd.substring(14).toInt();
+      if (newFrameRate > 0)
+      {
+        frameRate = newFrameRate;
+        prefs.putUInt("frameRate", newFrameRate);
+        SLEEP_TIME = (uint64_t) newFrameRate * 60 * 1000000;
+        Serial0.println("FRAMERATE SAVED");
+        Serial.print("Frame Rate updated to (mins): ");
+        Serial.println(newFrameRate);
+      }
+      else
+      {
+        Serial0.println("FRAMERATE INVALID");
+        Serial.print("Invalid frame rate received");
+      }
     }
   }
 
@@ -403,6 +426,29 @@ void loop()
     esp_deep_sleep_start();
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // --- Check Pi timeout ---

@@ -398,6 +398,36 @@ def safeShutdown(reason=""):
     sys.exit(0)
 
 
+def check_pending_framerate(config):
+    try:
+        response = requests.post(UPLOAD_URL,
+            data={
+                "secret":        config.get("secret", "GeiseitoFi"),
+                "deviceID":      config.get("deviceID", ""),
+                "camera_id":     config.get("cameraId", ""),
+                "check_pending": "1"
+            }, timeout=20)
+        if response.status_code == 200:
+            pending = response.json().get("pending_frameRate")
+            if pending is not None:
+                return int(pending)
+    except Exception as e:
+        logging.error(f"check_pending_framerate failed: {e}")
+    return None
+
+
+def confirm_framerate_saved(config, frameRate):
+    try:
+        requests.post(UPLOAD_URL,
+            data={
+                "secret":              config.get("secret", "GeiseitoFi"),
+                "deviceID":            config.get("deviceID", ""),
+                "camera_id":           config.get("cameraId", ""),
+                "frameRate_confirmed": frameRate
+            }, timeout=20)
+    except Exception as e:
+        logging.error(f"confirm_framerate_saved failed: {e}")
+
 #--------------------------------------------- Main Execution ------------------------------------------
 
 GPIO.setmode(GPIO.BCM)
@@ -447,6 +477,35 @@ try:
         logging.error(f"UART Error: {e}")
 
 
+    #------------- Send Pending Frame Rate to ESP32 if saved from last boot -------------
+    pendingFrameRatePath = os.path.join(BASE_DIR, "pending_config.json")
+    if os.path.exists(pendingFrameRatePath):
+        try:
+            with open(pendingFrameRatePath, "r") as f:
+                pending_config = json.load(f) 
+
+            if not pending_config.get("confirmed"):
+                pending_fr = pending_config.get("frameRate")
+                logging.info(f"Sending pending frame rate {pending_fr}mins to ESP32")
+                uart.send(f"SET FRAMERATE {pending_fr}\n")
+
+                ack = wait_for_uart(uart, timeout=5)
+                if ack == "FRAMERATE SAVED":
+                    logging.info(f"ESP32 confirmed frame rate {pending_fr}mins")
+                    config["frameRate"] = pending_fr
+                    save_config(config)
+
+                    with open(pendingFrameRatePath, "w") as f:
+                        json.dump({"frameRate": pending_fr, "confirmed": True}, f)
+                else:
+                    logging.info(f"ESP32 did not confirm frame rate change. Response: {ack}")
+
+
+        except Exception as e:
+            logging.error(f"Error sending pending frame rate to ESP32: {e}")
+
+
+    #------------------ Initialize PPP Connection -----------------
     ppp_process = sim_ppp.init_connection()
     if ppp_process is None:
         logging.error("No PPP connection. Shutting down")
@@ -459,8 +518,30 @@ try:
             logging.error("Internet not available after PPP.")
             print("Internet not available after PPP.")
 
+    #------------------ Check server for pending frameRate and Save locally, will be sent to ESP32 on next boot -----------------
+    pendng_config_path = os.path.join(BASE_DIR, "pending_config.json")
+    if (os.path.exists(pendng_config_path)):
+        try:
+            with open(pendng_config_path, "r") as f:
+                pending_config = json.load(f)
 
-    # Capture image
+            if pending_config.get("confirmed"):
+                confirm_framerate_saved(config, pending_config.get("frameRate"))
+                os.remove(pendng_config_path)
+                logging.info(f"Server notified of confirmed frame rate {pending_config.get('frameRate')}")
+        except Exception as e:
+            logging.error(f"Error confirming frame rate to server: {e}")
+
+    if not os.path.exists(pendng_config_path):
+        pending_fr = check_pending_framerate(config)
+        if pending_fr is not None and pending_fr != config.get("frameRate"):
+            logging.info(f"Pending frame rate {pending_fr}mins - will be sent to ESP32 on next boot")
+            with open(pendng_config_path, "w") as f:
+                json.dump({"frameRate": pending_fr, "confirmed": False}, f)
+
+
+
+    #------------------ Capture Image -----------------
     try:
         print("Capturing image...")
         picam2 = Picamera2()
@@ -480,20 +561,20 @@ try:
         safeShutdown("Camera Error")
     try:
         subprocess.run(
-        [
-        "python3",
-        os.path.join(BASE_DIR, "run_pipeline.py"),
-        "--input", IMAGE_PATH,
-        "--output", OUTPUT_IMAGE_PATH,
-        "--weather-onnx", os.path.join(BASE_DIR, "weathernet.onnx"),
-        "--classes", os.path.join(BASE_DIR, "class_to_idx.json"),
-        "--yolox-onnx", os.path.join(BASE_DIR, "model.onnx"),
-        "--yolox-classes", os.path.join(BASE_DIR, "classes.txt"),
-        ],
-    check=True,
-    capture_output=True,
-    text=True,
-)
+            [
+            "python3",
+            os.path.join(BASE_DIR, "run_pipeline.py"),
+            "--input", IMAGE_PATH,
+            "--output", OUTPUT_IMAGE_PATH,
+            "--weather-onnx", os.path.join(BASE_DIR, "weathernet.onnx"),
+            "--classes", os.path.join(BASE_DIR, "class_to_idx.json"),
+            "--yolox-onnx", os.path.join(BASE_DIR, "model.onnx"),
+            "--yolox-classes", os.path.join(BASE_DIR, "classes.txt"),
+            ],
+        check=True,
+        capture_output=True,
+        text=True,
+        )
         logging.info("Pipeline finished successfully")
 
     except subprocess.CalledProcessError as e:
@@ -591,6 +672,7 @@ try:
                 print (f"HTML- Image Upload successful on attempt {attempt}")
                 logging.info(f"HTML- Image Upload successful on attempt {attempt}")
                 HTML_success = True
+
                 break
 
             else:

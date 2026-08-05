@@ -224,8 +224,25 @@ def save_config(config, path=CONFIG_PATH):
     with open(path, "w") as f:
         json.dump(config, f, indent=4)
 
+def get_device_id():
+    try:
+        with open('/proc/cpuinfo', 'r') as f:
+            for line in f:
+                if line.startswith('Serial'):
+                    return line.split(':')[1].strip()
+    except:
+        pass
+    # Fallback to eth0 MAC
+    try:
+        with open('/sys/class/net/eth0/address', 'r') as f:
+            return f.read().strip().replace(':', '')
+    except:
+        pass
+    return None
 
 def load_config(path=CONFIG_PATH):
+    device_id = get_device_id()
+
     if not os.path.exists(path):
         default_config = {
             "cameraId": "", 
@@ -237,7 +254,8 @@ def load_config(path=CONFIG_PATH):
             "ftpPath": "/", 
             "protocol": "ftp", 
             "frameRate": 20,
-            "secret": "GeiseitoFi"
+            "secret": "GeiseitoFi",
+            "deviceID": device_id
         }
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w") as f:
@@ -253,6 +271,8 @@ def load_config(path=CONFIG_PATH):
 
 def receive_and_save_config(line, path=CONFIG_PATH):
     config = parse_config_line(line)
+    config["deviceID"] = get_device_id()
+    config["secret"] = "GeiseitoFi"  # Ensure secret is always set
     save_config(config, path)
     return config
 
@@ -340,21 +360,6 @@ def upload_log(config, log_text, remote_name="Capture.log"):
         return resp
 
 
-def get_device_id():
-    try:
-        with open('/proc/cpuinfo', 'r') as f:
-            for line in f:
-                if line.startswith('Serial'):
-                    return line.split(':')[1].strip()
-    except:
-        pass
-    # Fallback to eth0 MAC
-    try:
-        with open('/sys/class/net/eth0/address', 'r') as f:
-            return f.read().strip().replace(':', '')
-    except:
-        pass
-    return None
 #------------------ Main Execution -----------------
 
 GPIO.setmode(GPIO.BCM)
@@ -365,8 +370,7 @@ GPIO.setup(SHUTDOWN_COMPLETED, GPIO.OUT, initial=GPIO.HIGH)
 uart = UARTComm(port='/dev/serial0', baudrate=9600)
 mark_session_start()
 config = load_config()
-device_id = get_device_id()
-print(f"Device ID: {device_id}")
+
 
 
 try:
@@ -522,6 +526,7 @@ try:
                                          data={
                                              "secret": config.get("secret", "GeiseitoFi"),
                                              "camera_id": config.get("cameraId", ""),
+                                             "deviceID": config.get("deviceID", ""),
                                              "location": config.get("location", ""),
                                              "frameRate": config.get("frameRate", 20),
                                              "battery": BatteryData, }, 

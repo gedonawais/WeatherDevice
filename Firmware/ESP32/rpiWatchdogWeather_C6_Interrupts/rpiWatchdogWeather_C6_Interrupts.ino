@@ -14,14 +14,14 @@
 const char* apSSID = "ESP32-CAMERA-CONFIG";
 const char* apPassword = "12345678";
 
-static float  Vbat              = 0.0;
 bool          configMode        = false;
 volatile bool Vbat_Sent         = false;
 volatile bool imageSentFlag     = false;
+static float  Vbat              = 0.0;
 unsigned long PiStartTime       = 0;
 unsigned long shutdownStart     = 0;
 unsigned long configStartMillis = 0;
-RTC_DATA_ATTR bool skipConfigPortal = true;    // should be false
+RTC_DATA_ATTR bool skipConfigPortal = false;    // should be false
 
  
 const uint32_t PI_TIMEOUT              = 8UL  * 60 * 1000;       // 8 mins    
@@ -373,8 +373,9 @@ void loop()
         prefs.putUInt("frameRate", newFrameRate);
         SLEEP_TIME = (uint64_t) newFrameRate * 60 * 1000000;
         Serial0.println("FRAMERATE UPDATED");
-        Serial.print("Frame Rate updated to (mins): ");
-        Serial.println(newFrameRate);
+
+        Serial.print("Frame Rate updated to (mins): "); Serial.println(newFrameRate);
+        
       }
       else if (newFrameRate == frameRate)
       {

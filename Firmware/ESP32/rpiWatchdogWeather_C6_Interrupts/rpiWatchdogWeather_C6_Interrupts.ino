@@ -323,6 +323,7 @@ void setup()
 
 void loop() 
 {
+
   if(Serial0.available())
   {
     esp_task_wdt_reset();
@@ -359,21 +360,26 @@ void loop()
 
     if (cmd == "CONFIG SAVED")
     {
-      Serial.println("Making flag false again");
+      Serial.println("Configurations Saved in RPi");
       prefs.putBool("configChanged", false);            // marking it false again, so esp knows that configurations are not changed on next run
     }
 
     if (cmd.startsWith("SET FRAMERATE"))
     {
       newFrameRate = cmd.substring(14).toInt();
-      if (newFrameRate > 0)
+      if (newFrameRate > 0 && newFrameRate!= frameRate)
       {
         frameRate = newFrameRate;
         prefs.putUInt("frameRate", newFrameRate);
         SLEEP_TIME = (uint64_t) newFrameRate * 60 * 1000000;
-        Serial0.println("FRAMERATE SAVED");
+        Serial0.println("FRAMERATE UPDATED");
         Serial.print("Frame Rate updated to (mins): ");
         Serial.println(newFrameRate);
+      }
+      else if (newFrameRate == frameRate)
+      {
+        Serial0.println("FRAMERATE IDENTICAL TO SAVED FRAME RATE");
+        Serial.println("Same Frame Rate");
       }
       else
       {

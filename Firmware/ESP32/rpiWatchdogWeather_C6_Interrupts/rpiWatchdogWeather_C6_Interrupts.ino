@@ -1,7 +1,6 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <Preferences.h>
-#include <Adafruit_NeoPixel.h>
 #include "esp_sleep.h"
 #include "esp_task_wdt.h"
 
@@ -47,7 +46,7 @@ void IRAM_ATTR imageSentISR()
   imageSentFlag = true;
 }
 
-esp_task_wdt_config_t config = 
+esp_task_wdt_config_t wdtConfig = 
 {
   .timeout_ms = WDT_TIMEOUT, 
   .trigger_panic = true,
@@ -206,13 +205,19 @@ void handleSave()
   prefs.putString("ftpUser", newFtpUser);
   prefs.putString("ftpPath", newFtpPath);
   prefs.putString("protocol", newProtocol);
-  prefs.putUInt("frameRate", newFrameRate.toInt());
 
   if (newFtpPass.length() > 0) 
   {
     prefs.putString("ftpPass", newFtpPass);
   }
 
+  if (newFrameRate.toInt() < 0 || newFrameRate.toInt() > 1440)
+  {
+    server.send(400, "text/html", "<h2>Frame rate must be 1..1440 minutes.</h2>");
+    return;
+  }
+  prefs.putUInt("frameRate", newFrameRate.toInt());
+  
   prefs.putBool("configured", true);
   prefs.putBool("configChanged", true);
 
@@ -314,7 +319,7 @@ void setup()
   digitalWrite(RPI_ENABLE, HIGH);
 
   esp_task_wdt_deinit();
-  esp_task_wdt_init(&config);
+  esp_task_wdt_init(&wdtConfig);
   esp_task_wdt_add(NULL);
 
   PiStartTime = millis();
@@ -327,6 +332,8 @@ void loop()
   if(Serial0.available())
   {
     esp_task_wdt_reset();
+    PiStartTime = millis();           // Resetting Pi Timeout
+
     String cmd = Serial0.readStringUntil('\n');
     cmd.trim();
 
@@ -338,6 +345,7 @@ void loop()
 
     if (cmd == "SEND CONFIG")
     {
+      loadConfig();
       if (prefs.getBool("configChanged", false))        // checking for configChanged variable, if it doesn't exist mark it as false
       {
         Serial.println("Sending Config");
@@ -405,12 +413,31 @@ void loop()
     Serial.println("Image Sent to server! Sending shutdown command to Pi.");
     digitalWrite(SEND_SHUTDOWN_SIGNAL_TO_RPI, HIGH);
 
-    shutdownStart = millis();
     // Wait for Pi shutdown complete
     Serial.println("Waiting for Pi to shutdown");
-    while (digitalRead(SHUTDOWN_COMPLETE_STATUS_FROM_RPI) != LOW) 
+    shutdownStart = millis();
+    unsigned long lowSince = 0;
+    while (true)
     {
       esp_task_wdt_reset();
+      int pin = digitalRead(SHUTDOWN_COMPLETE_STATUS_FROM_RPI);
+
+      if (pin == LOW)
+      {
+        if (lowSince == 0)
+        {
+          lowSince = millis();
+        }
+        if (millis() - lowSince >= 200)
+        {
+          break;
+        }
+      }
+      else
+      {
+        lowSince = 0;
+      }
+
       if (millis() - shutdownStart > SHUTDOWN_TIMEOUT)
       {
         Serial.println("Pi shutdown timeout, forcing power off.");
@@ -429,6 +456,7 @@ void loop()
     skipConfigPortal = true;
     Serial.print("ESP going to deep sleep for ");
     Serial.println(SLEEP_TIME);
+    delay(1000);
     esp_sleep_enable_timer_wakeup(SLEEP_TIME);
     esp_deep_sleep_start();
   }

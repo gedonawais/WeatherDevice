@@ -174,7 +174,11 @@ def uploadLogs(config):
             response = requests.post(UPLOAD_URL,
                                      data={
                                          "secret": config.get("secret", "GeiseitoFi"),
+<<<<<<< Updated upstream
                                          "cameraID": config.get("cameraID", ""),
+=======
+                                         "cameraID": config.get("cameraId", ""),
+>>>>>>> Stashed changes
                                          "deviceID": config.get("deviceID", ""),
                                          "logs":logs}, timeout=60)
             if response.status_code == 200:
@@ -339,7 +343,10 @@ def upload_file(config, local_path, remote_path):
 
         finally:
             if ftp:
-                ftp.quit()
+                try:
+                    ftp.quit()
+                except: 
+                    pass
         return resp
     
 
@@ -378,8 +385,11 @@ def upload_log(config, log_text, remote_name="Capture.log"):
             return resp
         
         finally:
-            if ftp:    
-                ftp.quit()
+            if ftp:
+                try:    
+                    ftp.quit()
+                except:
+                    pass
 
 
 def safeShutdown(reason=""):
@@ -616,7 +626,11 @@ try:
 
                                          data={
                                              "secret": config.get("secret", "GeiseitoFi"),
+<<<<<<< Updated upstream
                                              "cameraID": config.get("cameraID", ""),
+=======
+                                             "cameraID": config.get("cameraId", ""),
+>>>>>>> Stashed changes
                                              "deviceID": config.get("deviceID", ""),
                                              "location": config.get("location", ""),
                                              "frameRate": config.get("frameRate", 20),

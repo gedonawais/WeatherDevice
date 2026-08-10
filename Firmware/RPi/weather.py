@@ -482,7 +482,7 @@ try:
     #------------------ Initialize PPP Connection -----------------
     ppp_process = sim_ppp.init_connection()
     if ppp_process is None:
-        logging.error("No PPP connection. Shutting down")
+        log_no_time("No PPP connection. Shutting down")
         print("PPP connection failed. Shutting Down")
         keep_last_two_sessions()
         safeShutdown("PPP connection failed")
@@ -490,7 +490,7 @@ try:
         if wait_for_internet():
             sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
         else:
-            logging.error("Internet not available after PPP.")
+            log_no_time("Internet not available after PPP.")
             print("Internet not available after PPP.")
             keep_last_two_sessions()
             safeShutdown("Internet not available after PPP.")

@@ -211,7 +211,7 @@ void handleSave()
     prefs.putString("ftpPass", newFtpPass);
   }
 
-  if (newFrameRate.toInt() < 0 || newFrameRate.toInt() > 1440)
+  if (newFrameRate.toInt() <= 0 || newFrameRate.toInt() > 1440)
   {
     server.send(400, "text/html", "<h2>Frame rate must be 1..1440 minutes.</h2>");
     return;
@@ -418,7 +418,7 @@ void loop()
 
     Serial.println("Image Sent to server! Sending shutdown command to Pi.");
     digitalWrite(SEND_SHUTDOWN_SIGNAL_TO_RPI, HIGH);
-    shutdownAndSleep()
+    shutdownAndSleep();
   }
 }
 

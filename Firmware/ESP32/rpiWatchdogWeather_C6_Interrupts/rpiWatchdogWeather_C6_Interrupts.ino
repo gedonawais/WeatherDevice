@@ -13,6 +13,7 @@
 const char* apSSID = "ESP32-CAMERA-CONFIG";
 const char* apPassword = "12345678";
 
+bool          checkPiStatus     = false;
 bool          configMode        = false;
 volatile bool imageSentFlag     = false;
 static float  Vbat              = 0.0;
@@ -40,7 +41,7 @@ uint32_t newFrameRate = 20;  // getting it from server (RPi)
 WebServer server(80);
 Preferences prefs;
 
-void shutdownAndSleep();
+void shutdownAndSleep(String reason);
 void checkPiTimeout();
 float readBatteryRaw();
 
@@ -331,10 +332,19 @@ void setup()
 
 void loop() 
 {
-  
   esp_task_wdt_reset();
   checkPiTimeout();
   
+  if (digitalRead(SHUTDOWN_COMPLETE_STATUS_FROM_RPI) == HIGH)
+  {
+    checkPiStatus = true;
+  }
+  
+  if (checkPiStatus && (digitalRead(SHUTDOWN_COMPLETE_STATUS_FROM_RPI) == LOW ))
+  {
+    shutdownAndSleep("Error/Exception occured at RPi side");
+  }
+
   if(Serial0.available())
   {
     esp_task_wdt_reset();
@@ -404,7 +414,6 @@ void loop()
     }
   }
 
-
   if(imageSentFlag) 
   {
     Serial.println("Interrupt Detected");
@@ -415,7 +424,7 @@ void loop()
 
     Serial.println("Image Sent to server! Sending shutdown command to Pi.");
     digitalWrite(SEND_SHUTDOWN_SIGNAL_TO_RPI, HIGH);
-    shutdownAndSleep();
+    shutdownAndSleep("Image Successfully Sent");
   }
 }
 
@@ -431,9 +440,8 @@ void loop()
 
 
 // --- Wait for RPi shutdown confirmation, then power off and sleep ---
-void shutdownAndSleep()
+void shutdownAndSleep(String reason)
 {
-  Serial.println("Waiting for Pi to shutdown");
   shutdownStart = millis();
   unsigned long lowSince = 0;
 
@@ -466,7 +474,7 @@ void shutdownAndSleep()
     delay(10);
   }
 
-  Serial.println("Pi shutdown confirmed / timeout reached");
+  Serial.print("Pi shutdown down:");  Serial.println(reason);
   digitalWrite(SEND_SHUTDOWN_SIGNAL_TO_RPI, LOW);
   delay(500);
 
@@ -507,7 +515,7 @@ void checkPiTimeout()
     if (PI_RESTARTS >= 2)
     {
       Serial.println("Pi failed after max restarts. Forcing sleep.");
-      shutdownAndSleep();
+      shutdownAndSleep("Pi max restarts done");
     }
   }
 }

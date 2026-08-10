@@ -620,7 +620,7 @@ try:
 
                                          data={
                                              "secret": config.get("secret", "GeiseitoFi"),
-                                             "cameraID": config.get("cameraId", ""),
+                                             "cameraID": config.get("cameraID", ""),
                                              "deviceID": config.get("deviceID", ""),
                                              "location": config.get("location", ""),
                                              "frameRate": config.get("frameRate", 20),

@@ -523,4 +523,3 @@ float readBatteryRaw()
   return total / (float)samples;
 }
 
-

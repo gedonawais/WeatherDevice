@@ -269,6 +269,61 @@ void startNormalMode()
   Serial.println("Frame Rate: " + String(frameRate));
 }
 
+// --- Wait for RPi shutdown confirmation, then power off and sleep ---
+void shutdownAndSleep()
+{
+  Serial.println("Waiting for Pi to shutdown");
+  shutdownStart = millis();
+  unsigned long lowSince = 0;
+
+  if (digitalRead(SHUTDOWN_COMPLETE_STATUS_FROM_RPI) == LOW)
+  {
+    while (true)
+    {
+      esp_task_wdt_reset();
+      int pin = digitalRead(SHUTDOWN_COMPLETE_STATUS_FROM_RPI);
+
+      if (pin == LOW)
+      {
+        if (lowSince == 0)
+        {
+          lowSince = millis();
+        }
+        if (millis() - lowSince >= 200)
+        {
+          break;
+        }
+      }
+      else
+      {
+        lowSince = 0;
+      }
+
+      if (millis() - shutdownStart > SHUTDOWN_TIMEOUT)
+      {
+        Serial.println("Pi shutdown timeout, forcing power off.");
+        break;
+      }
+      delay(10);
+    }
+  }
+
+  Serial.println("Pi shutdown confirmed / timeout reached");
+  digitalWrite(SEND_SHUTDOWN_SIGNAL_TO_RPI, LOW);
+  delay(500);
+
+  digitalWrite(RPI_ENABLE, LOW);
+  delay(500);
+
+  skipConfigPortal = true;
+  Serial.print("ESP going to deep sleep for ");
+  Serial.println(SLEEP_TIME);
+  delay(1000);
+  esp_sleep_enable_timer_wakeup(SLEEP_TIME);
+  esp_deep_sleep_start();
+}
+
+
 void setup() 
 {
   Serial.begin(115200);
@@ -401,6 +456,13 @@ void loop()
   esp_task_wdt_reset();
   checkPiTimeout();
   delay(100);
+
+  // Detect early RPi shutdown (e.g. PPP failure, no internet) without image-sent interrupt
+  if (digitalRead(SHUTDOWN_COMPLETE_STATUS_FROM_RPI) == LOW)
+  {
+    Serial.println("RPi shut down early. Going to sleep.");
+    shutdownAndSleep();
+  }
   
   if(imageSentFlag) 
   {
@@ -413,52 +475,7 @@ void loop()
     Serial.println("Image Sent to server! Sending shutdown command to Pi.");
     digitalWrite(SEND_SHUTDOWN_SIGNAL_TO_RPI, HIGH);
 
-    // Wait for Pi shutdown complete
-    Serial.println("Waiting for Pi to shutdown");
-    shutdownStart = millis();
-    unsigned long lowSince = 0;
-    while (true)
-    {
-      esp_task_wdt_reset();
-      int pin = digitalRead(SHUTDOWN_COMPLETE_STATUS_FROM_RPI);
-
-      if (pin == LOW)
-      {
-        if (lowSince == 0)
-        {
-          lowSince = millis();
-        }
-        if (millis() - lowSince >= 200)
-        {
-          break;
-        }
-      }
-      else
-      {
-        lowSince = 0;
-      }
-
-      if (millis() - shutdownStart > SHUTDOWN_TIMEOUT)
-      {
-        Serial.println("Pi shutdown timeout, forcing power off.");
-        break;
-      }
-      delay(10);
-    }
-
-    Serial.println("Pi shutdown confirmed / timeout reached");
-    digitalWrite(SEND_SHUTDOWN_SIGNAL_TO_RPI, LOW);
-    delay(500);
-
-    digitalWrite(RPI_ENABLE, LOW);
-    delay(500);
-
-    skipConfigPortal = true;
-    Serial.print("ESP going to deep sleep for ");
-    Serial.println(SLEEP_TIME);
-    delay(1000);
-    esp_sleep_enable_timer_wakeup(SLEEP_TIME);
-    esp_deep_sleep_start();
+    shutdownAndSleep();
   }
 }
 

@@ -490,6 +490,8 @@ try:
         else:
             logging.error("Internet not available after PPP.")
             print("Internet not available after PPP.")
+            keep_last_two_sessions()
+            safeShutdown("Internet not available after PPP.")
 
 
     #------------------- Get Frame Rate from Server -----------------

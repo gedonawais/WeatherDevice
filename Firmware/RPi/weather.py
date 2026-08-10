@@ -134,6 +134,7 @@ def sync_time_after_ppp():
 
 
 def uploadLogs(config):
+    keep_last_two_sessions()
     logs = get_logs()
     #Upload to FTP with retries
     FTP_success = False

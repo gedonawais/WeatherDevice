@@ -492,6 +492,7 @@ try:
     if ppp_process is None:
         logging.error("No PPP connection. Shutting down")
         print("PPP connection failed. Shutting Down")
+        keep_last_two_sessions()
         safeShutdown("PPP connection failed")
     else:
         if wait_for_internet():
@@ -528,6 +529,7 @@ try:
     except Exception as e:
         print(f"Camera Error:{e}") 
         logging.error(f"Camera Error:{e}")
+        keep_last_two_sessions()
         safeShutdown("Camera Error")
     try:
         subprocess.run(
@@ -626,11 +628,7 @@ try:
 
                                          data={
                                              "secret": config.get("secret", "GeiseitoFi"),
-<<<<<<< Updated upstream
-                                             "cameraID": config.get("cameraID", ""),
-=======
                                              "cameraID": config.get("cameraId", ""),
->>>>>>> Stashed changes
                                              "deviceID": config.get("deviceID", ""),
                                              "location": config.get("location", ""),
                                              "frameRate": config.get("frameRate", 20),
@@ -664,6 +662,8 @@ try:
         with open(LOG_PATH, "a") as f:
             logs = get_logs()
             f.write(f"{logs}\n")
+
+        keep_last_two_sessions()   
         safeShutdown("All HTML and FTP upload attempts failed")
 
     elif not HTML_success:
@@ -730,4 +730,5 @@ try:
 except Exception as e:
     print (e)
     logging.critical(f"Error: {e}")
+    keep_last_two_sessions()
     safeShutdown(f"Unhandled Exception: {e}")

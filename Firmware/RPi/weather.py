@@ -189,12 +189,6 @@ def uploadLogs(config):
         if attempt < MAX_RETRIES:
             time.sleep(RETRY_DELAY)
 
-    if not HTML_success:
-        with open(LOG_PATH, "a") as f:
-            logs = get_logs()
-            f.write(f"{logs}\n")
-
-
 
 def wait_for_uart(uart, timeout=5):
     start = time.time()

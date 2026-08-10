@@ -14,7 +14,6 @@ const char* apSSID = "ESP32-CAMERA-CONFIG";
 const char* apPassword = "12345678";
 
 bool          configMode        = false;
-volatile bool Vbat_Sent         = false;
 volatile bool imageSentFlag     = false;
 static float  Vbat              = 0.0;
 unsigned long PiStartTime       = 0;
@@ -22,14 +21,15 @@ unsigned long shutdownStart     = 0;
 unsigned long configStartMillis = 0;
 RTC_DATA_ATTR bool skipConfigPortal = false;    // should be false
 
- 
+
+
 const uint32_t PI_TIMEOUT              = 8UL  * 60 * 1000;       // 8 mins    
 const uint32_t WDT_TIMEOUT             = 2UL  * 60 * 1000;       // 2 mins      
 const uint32_t CONFIG_TIMEOUT_MS       = 3UL  * 60 * 1000;      // 3 mins
 const uint32_t SHUTDOWN_TIMEOUT        = 3UL  * 60 * 1000;      // 3 mins 
 const uint64_t SLEEP_TIME_BATTERY_DIE  = 60UL * 60 * 1000000;   // 60 mins  
 uint64_t       SLEEP_TIME              = 20UL * 60 * 1000000;   // 20 mins, will also be fetched by webserver of esp and will be initilaised in function startNormalMode
-
+uint8_t        PI_RESTARTS             = 0;
 
 // Global Config Values
 String cameraId, location, ftpHost, ftpUser, ftpPass, ftpPath = "/", protocol = "ftp";
@@ -40,6 +40,9 @@ uint32_t newFrameRate = 20;  // getting it from server (RPi)
 WebServer server(80);
 Preferences prefs;
 
+void shutdownAndSleep();
+void checkPiTimeout();
+float readBatteryRaw();
 
 void IRAM_ATTR imageSentISR() 
 {
@@ -328,7 +331,10 @@ void setup()
 
 void loop() 
 {
-
+  
+  esp_task_wdt_reset();
+  checkPiTimeout();
+  
   if(Serial0.available())
   {
     esp_task_wdt_reset();
@@ -398,15 +404,6 @@ void loop()
     }
   }
 
-  esp_task_wdt_reset();
-  checkPiTimeout();
-  delay(100);
-  
-  if (digitalRead(SHUTDOWN_COMPLETE_STATUS_FROM_RPI) == LOW)
-  {
-    Serial.println("RPi shutdown early. Going to sleep");
-    shutdownAndSleep();
-  }
 
   if(imageSentFlag) 
   {
@@ -498,14 +495,20 @@ void shutdownAndSleep()
 void checkPiTimeout() 
 {
   if (millis() - PiStartTime > PI_TIMEOUT) 
-  {
-      Serial.println("Pi timeout! Power cycling...");
-      digitalWrite(RPI_ENABLE, LOW);
-      delay(2000);
-      digitalWrite(RPI_ENABLE, HIGH);
-      delay(2000);
+  { 
+    PI_RESTARTS++;
+    Serial.println("Pi timeout! Power cycling...");
+    digitalWrite(RPI_ENABLE, LOW);
+    delay(2000);
+    digitalWrite(RPI_ENABLE, HIGH);
+    delay(2000);
+    PiStartTime = millis();
 
-      PiStartTime = millis();
+    if (PI_RESTARTS >= 2)
+    {
+      Serial.println("Pi failed after max restarts. Forcing sleep.");
+      shutdownAndSleep();
+    }
   }
 }
 

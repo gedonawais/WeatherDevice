@@ -276,36 +276,33 @@ void shutdownAndSleep()
   shutdownStart = millis();
   unsigned long lowSince = 0;
 
-  if (digitalRead(SHUTDOWN_COMPLETE_STATUS_FROM_RPI) == LOW)
+  while (true)
   {
-    while (true)
+    esp_task_wdt_reset();
+    int pin = digitalRead(SHUTDOWN_COMPLETE_STATUS_FROM_RPI);
+
+    if (pin == LOW)
     {
-      esp_task_wdt_reset();
-      int pin = digitalRead(SHUTDOWN_COMPLETE_STATUS_FROM_RPI);
-
-      if (pin == LOW)
+      if (lowSince == 0)
       {
-        if (lowSince == 0)
-        {
-          lowSince = millis();
-        }
-        if (millis() - lowSince >= 200)
-        {
-          break;
-        }
+        lowSince = millis();
       }
-      else
+      if (millis() - lowSince >= 200)
       {
-        lowSince = 0;
-      }
-
-      if (millis() - shutdownStart > SHUTDOWN_TIMEOUT)
-      {
-        Serial.println("Pi shutdown timeout, forcing power off.");
         break;
       }
-      delay(10);
     }
+    else
+    {
+      lowSince = 0;
+    }
+
+    if (millis() - shutdownStart > SHUTDOWN_TIMEOUT)
+    {
+      Serial.println("Pi shutdown timeout, forcing power off.");
+      break;
+    }
+    delay(10);
   }
 
   Serial.println("Pi shutdown confirmed / timeout reached");

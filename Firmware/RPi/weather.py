@@ -174,11 +174,7 @@ def uploadLogs(config):
             response = requests.post(UPLOAD_URL,
                                      data={
                                          "secret": config.get("secret", "GeiseitoFi"),
-<<<<<<< Updated upstream
                                          "cameraID": config.get("cameraID", ""),
-=======
-                                         "cameraID": config.get("cameraId", ""),
->>>>>>> Stashed changes
                                          "deviceID": config.get("deviceID", ""),
                                          "logs":logs}, timeout=60)
             if response.status_code == 200:

@@ -649,24 +649,14 @@ try:
 
     if not HTML_success and not FTP_success:
         logging.error(f"All HTML and {config.get('protocol', 'ftp').upper()} upload attempts failed. SHUTTING DOWN")
-        with open(LOG_PATH, "a") as f:
-            logs = get_logs()
-            f.write(f"{logs}\n")
-
         keep_last_two_sessions()   
         safeShutdown("All HTML and FTP upload attempts failed")
 
     elif not HTML_success:
         logging.error("All HTML upload attempts failed.")
-        with open(LOG_PATH, "a") as f:
-            logs = get_logs()
-            f.write(f"{logs}\n")
 
     elif not FTP_success:
         logging.error(f"All {config.get('protocol', 'ftp').upper()} upload attempts failed.")
-        with open(LOG_PATH, "a") as f:
-            logs = get_logs()
-            f.write(f"{logs}\n")
 
 
     #------------------ Pulse ESP32 after successful upload -----------------

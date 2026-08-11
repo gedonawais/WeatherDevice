@@ -397,25 +397,34 @@ def safeShutdown(reason=""):
 
 
 
-def getFrameRate(config):
-    try:
-        response= requests.post (
-            UPLOAD_URL, data = {
-            "secret": config.get("secret", "GeiseitoFi"),
-            "cameraID" : config.get("cameraID", ""),
-            "deviceID" : config.get("deviceID", ""),
-            "getFrameRate" : 1
-            },
-            timeout=5
-        )
-
-        if response.status_code == 200:
-            return response.json().get("frameRate")
-
-    except Exception as e:
-        print(f"Error occurred: {e}")
-        return None
-
+ def getFrameRate(config):
+     try:
+         response= requests.post (
+             UPLOAD_URL, data = {
+             "secret": config.get("secret", "GeiseitoFi"),
+             "cameraID" : config.get("cameraID", ""),
+             "deviceID" : config.get("deviceID", ""),
+             "getFrameRate" : 1
+             },
+             timeout=5
+         )
+ 
+         if response.status_code == 200:
+-            return response.json().get("frameRate")
++            value = response.json().get("frameRate")
++            if value is None:
++                return None
++            value = int(value)
++            if 1 <= value <= 1440:
++                return value
++            logging.error(f"Invalid frameRate from server: {value}")
++            return None
+ 
+     except Exception as e:
+-        print(f"Error occurred: {e}")
++        print(f"Error occurred: {e}")
++        logging.error(f"getFrameRate failed: {e}")
+         return None
 #--------------------------------------------- Main Execution ------------------------------------------
 
 GPIO.setmode(GPIO.BCM)

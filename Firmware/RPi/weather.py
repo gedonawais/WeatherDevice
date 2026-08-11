@@ -207,7 +207,7 @@ def parse_config_line(data):
     parts = data.strip().split('|')
     if len(parts) != 9:
         raise ValueError(f"Expected 9 parts in config line, got {len(parts)}: {data}")
-    cameraID, location, ftpHost, ftpPort, ftpUser, ftpPass, ftpPath, protocol, framRate = parts
+    cameraID, location, ftpHost, ftpPort, ftpUser, ftpPass, ftpPath, protocol, frameRate = parts
     return {
         "cameraID": cameraID.strip(),
         "location": location.strip(),
@@ -217,7 +217,7 @@ def parse_config_line(data):
         "ftpPass": ftpPass.strip(),
         "ftpPath": ftpPath.strip(),
         "protocol": protocol.strip().lower(),
-        "frameRate": int(framRate.strip())
+        "frameRate": int(frameRate.strip())
     }
 
 

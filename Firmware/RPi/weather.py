@@ -517,9 +517,7 @@ try:
     #------------------- Get Frame Rate from Server -----------------
     newFrameRate = getFrameRate(config)
     if newFrameRate is not None and newFrameRate!= config.get("frameRate"):
-        config["frameRate"] = newFrameRate
-        save_config(config)
-        logging.info(f"Frame rate updated to {newFrameRate} from server")
+        logging.info(f"Frame rate {newFrameRate} fetched from server for next cycle")
     else:
         logging.info(f"Frame rate remains {config.get('frameRate')}")
 

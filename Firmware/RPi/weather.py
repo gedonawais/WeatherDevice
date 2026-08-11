@@ -517,8 +517,6 @@ try:
     #------------------- Get Frame Rate from Server -----------------
     newFrameRate = getFrameRate(config)
     if newFrameRate is not None and newFrameRate!= config.get("frameRate"):
-        config["frameRate"] = newFrameRate
-        save_config(config)
         logging.info(f"Frame rate {newFrameRate} fetched from server for next cycle")
     else:
         logging.info(f"Frame rate remains {config.get('frameRate')}")
@@ -680,6 +678,11 @@ try:
     elif not FTP_success:
         logging.error(f"All {config.get('protocol', 'ftp').upper()} upload attempts failed.")
 
+
+    if newFrameRate is not None and newFrameRate != config.get("frameRate"):
+        config["frameRate"] = newFrameRate
+        save_config(config)
+        logging.info(f"Frame rate updated to {newFrameRate} from server")
 
     #------------------ Pulse ESP32 after successful upload -----------------
     GPIO.output(SIGNAL_TO_ESP32, GPIO.HIGH)

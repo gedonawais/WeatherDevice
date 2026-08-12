@@ -1,5 +1,7 @@
 import json
+import os
 import shutil
+import stat
 import tempfile
 import zipfile
 from pathlib import Path
@@ -61,6 +63,20 @@ def extract_zip():
     return new_rpi
 
 
+def ignore_special_files(src, names):
+    ignored = []
+    for name in names:
+        full_path = os.path.join(src, name)
+        try:
+            mode = os.lstat(full_path).st_mode
+            if stat.S_ISFIFO(mode) or stat.S_ISSOCK(mode):
+                print(f"Skipping special file in backup: {full_path}")
+                ignored.append(name)
+        except Exception as e:
+            print(f"Could not inspect {full_path}: {e}")
+    return ignored
+
+
 def run_ota_update():
     print("Starting OTA update check...")
     meta = fetch_meta()
@@ -88,7 +104,8 @@ def run_ota_update():
 
     if TARGET_DIR.exists():
         print(f"Backing up current RPi folder from {TARGET_DIR} to {BACKUP_DIR}")
-        shutil.copytree(TARGET_DIR, BACKUP_DIR)
+        shutil.copytree(TARGET_DIR, BACKUP_DIR, ignore=ignore_special_files)
+
         print(f"Removing current RPi folder: {TARGET_DIR}")
         shutil.rmtree(TARGET_DIR)
 
@@ -98,7 +115,6 @@ def run_ota_update():
     write_local_version(remote_version)
     print("OTA update completed successfully")
     return True
-
 
 
 if __name__ == "__main__":

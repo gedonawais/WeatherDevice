@@ -26,10 +26,10 @@ LOG_PATH = os.path.join(BASE_DIR, "Logs/capture.log")
 IMAGE_PATH = os.path.join(BASE_DIR, "Images/picture.jpg")
 OUTPUT_IMAGE_PATH = os.path.join(BASE_DIR, "Images/out.jpg")
 PIPELINE_JSON = os.path.join(BASE_DIR, "out_pipeline.json")
-
 UPLOAD_URL = "https://emea-edu.com/cameraDashboard/upload.php"
 
-
+os.makedirs(os.path.join(BASE_DIR, "Logs"), exist_ok=True)
+os.makedirs(os.path.join(BASE_DIR, "Images"), exist_ok=True)
 
 SIGNAL_TO_ESP32 = 23
 SHUTDOWN_FROM_ESP32 = 24

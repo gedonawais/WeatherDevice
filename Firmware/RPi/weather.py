@@ -282,7 +282,7 @@ def receive_and_save_config(line, path=CONFIG_PATH):
     return config
 
 
-def wait_for_internet(host="8.8.8.8", dns_host="google.com", retries=10, delay=1):
+def wait_for_internet(host="8.8.8.8", dns_host="google.com", retries=10, delay=2):
     for _ in range(retries):
         print (f"Waiting for internet {_+1}/{retries}...")
         ip_ok = subprocess.run(

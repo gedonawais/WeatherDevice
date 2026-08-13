@@ -285,6 +285,23 @@ def restore_backup():
         logOTA("No backup available to restore")
 
 
+def merge_tree(src, dst):
+    src = Path(src)
+    dst = Path(dst)
+
+    for item in src.iterdir():
+        src_item = src / item.name
+        dst_item = dst / item.name
+
+        if src_item.is_dir():
+            dst_item.mkdir(parents=True, exist_ok=True)
+            merge_tree(src_item, dst_item)
+        else:
+            dst_item.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src_item, dst_item)
+            logOTA(f"Copied file: {src_item} -> {dst_item}")
+
+
 def run_ota_update(config):
     clear_ota_log()
 
@@ -327,12 +344,12 @@ def run_ota_update(config):
             shutil.copytree(TARGET_DIR, BACKUP_DIR, ignore=ignore_special_files)
 
         try:
-            if TARGET_DIR.exists():
-                logOTA(f"Removing current RPi folder: {TARGET_DIR}")
-                shutil.rmtree(TARGET_DIR)
+            if not TARGET_DIR.exists():
+                logOTA(f"Creating target directory: {TARGET_DIR}")
+                TARGET_DIR.mkdir(parents=True, exist_ok=True)
 
-            logOTA(f"Moving new RPi folder into place: {TARGET_DIR}")
-            shutil.move(str(new_rpi), str(TARGET_DIR))
+            logOTA(f"Merging extracted files from {new_rpi} into {TARGET_DIR}")
+            merge_tree(new_rpi, TARGET_DIR)
 
             write_local_version(remote_version)
             logOTA("OTA update completed successfully")

@@ -24,7 +24,7 @@ RTC_DATA_ATTR bool skipConfigPortal = true;    // should be false
 
 
 
-const uint32_t PI_TIMEOUT              = 60UL  * 60 * 1000;       // 8 mins    
+const uint32_t PI_TIMEOUT              = 8UL  * 60 * 1000;       // 8 mins    
 const uint32_t WDT_TIMEOUT             = 2UL  * 60 * 1000;       // 2 mins      
 const uint32_t CONFIG_TIMEOUT_MS       = 3UL  * 60 * 1000;      // 3 mins
 const uint32_t SHUTDOWN_TIMEOUT        = 3UL  * 60 * 1000;      // 3 mins 
@@ -125,7 +125,6 @@ void handleRoot()
 
     FTP Username:<br>
     <input name="ftpUser" value="%FTP_USER%"><br><br>
-
     FTP Password:<br>
     <input name="ftpPass" type="password" placeholder="Leave blank to keep current password"><br><br>
 
@@ -348,7 +347,7 @@ void loop()
   if(Serial0.available())
   {
     esp_task_wdt_reset();
-    PiStartTime = millis();           // Resetting Pi Timeout
+    PiStartTime = millis();                         // Resetting Pi Timeout
 
     String cmd = Serial0.readStringUntil('\n');
     cmd.trim();
@@ -361,6 +360,7 @@ void loop()
 
     if (cmd == "SEND CONFIG" || cmd == "SEND CONFIG FORCED")
     {
+      Serial.println(cmd);
       loadConfig();
       bool forceSend = (cmd == "SEND CONFIG FORCED");
 

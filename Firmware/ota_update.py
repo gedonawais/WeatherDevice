@@ -66,14 +66,68 @@ def fetch_meta():
     logOTA(f"Remote metadata: {meta}")
     return meta
 
-
-def download_zip(url):
+def download_zip(url, retries=3, timeout=60, chunk_size=1024 * 256):
     logOTA(f"Downloading update ZIP from: {url}")
+
+    tmp_part = Path(str(TMP_ZIP) + ".part")
+    last_error = None
+
     if TMP_ZIP.exists():
         TMP_ZIP.unlink()
         logOTA(f"Removed old temp ZIP: {TMP_ZIP}")
-    urlretrieve(url, TMP_ZIP)
-    logOTA(f"ZIP downloaded to: {TMP_ZIP}")
+
+    if tmp_part.exists():
+        tmp_part.unlink()
+        logOTA(f"Removed old partial ZIP: {tmp_part}")
+
+    for attempt in range(1, retries + 1):
+        try:
+            if tmp_part.exists():
+                tmp_part.unlink()
+
+            with urlopen(url, timeout=timeout) as response:
+                expected_size = response.length
+                downloaded_size = 0
+
+                logOTA(f"Download attempt {attempt}/{retries}")
+                if expected_size is not None:
+                    logOTA(f"Expected ZIP size: {expected_size} bytes")
+
+                with open(tmp_part, "wb") as f:
+                    while True:
+                        chunk = response.read(chunk_size)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        downloaded_size += len(chunk)
+
+                logOTA(f"Downloaded {downloaded_size} bytes")
+
+                if expected_size is not None and downloaded_size != expected_size:
+                    raise RuntimeError(
+                        f"Download incomplete: got {downloaded_size} out of {expected_size} bytes"
+                    )
+
+            os.replace(tmp_part, TMP_ZIP)
+            logOTA(f"ZIP downloaded successfully to: {TMP_ZIP}")
+            return
+
+        except Exception as e:
+            last_error = e
+            logOTA(f"Download attempt {attempt} failed: {type(e).__name__}: {e}")
+
+            if tmp_part.exists():
+                try:
+                    tmp_part.unlink()
+                except Exception:
+                    pass
+
+            if attempt < retries:
+                logOTA("Retrying download in 5 seconds...")
+                import time
+                time.sleep(5)
+
+    raise RuntimeError(f"ZIP download failed after {retries} attempts: {last_error}")
 
 
 def extract_zip():

@@ -20,7 +20,7 @@ static float  Vbat              = 0.0;
 unsigned long PiStartTime       = 0;
 unsigned long shutdownStart     = 0;
 unsigned long configStartMillis = 0;
-RTC_DATA_ATTR bool skipConfigPortal = true;    // should be false
+RTC_DATA_ATTR bool skipConfigPortal = false;    // should be false
 
 
 
@@ -276,6 +276,7 @@ void setup()
 {
   Serial.begin(115200);
   Serial0.begin(9600);
+  Serial0.setTimeout(100);
   
   pinMode(IMAGE_SENT_SIGNAL_FROM_RPI, INPUT_PULLDOWN);
   pinMode(SEND_SHUTDOWN_SIGNAL_TO_RPI, OUTPUT);
@@ -331,8 +332,8 @@ void setup()
 
 void loop() 
 {
-  esp_task_wdt_reset();
   checkPiTimeout();
+  esp_task_wdt_reset();
   
   if (digitalRead(SHUTDOWN_COMPLETE_STATUS_FROM_RPI) == HIGH)
   {
@@ -414,6 +415,9 @@ void loop()
         Serial.print("Invalid frame rate received");
       }
     }
+
+    esp_task_wdt_reset();
+    PiStartTime = millis(); 
   }
 
   if(imageSentFlag) 

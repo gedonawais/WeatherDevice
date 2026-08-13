@@ -3,9 +3,10 @@ import os
 import shutil
 import stat
 import tempfile
+import time
 import zipfile
 from pathlib import Path
-from urllib.request import urlopen, urlretrieve
+from urllib.request import urlopen
 import requests
 
 META_URL = "https://emea-edu.com/cameraDashboard/ota_meta.json"
@@ -66,6 +67,7 @@ def fetch_meta():
     logOTA(f"Remote metadata: {meta}")
     return meta
 
+
 def download_zip(url, retries=3, timeout=60, chunk_size=1024 * 256):
     logOTA(f"Downloading update ZIP from: {url}")
 
@@ -124,7 +126,6 @@ def download_zip(url, retries=3, timeout=60, chunk_size=1024 * 256):
 
             if attempt < retries:
                 logOTA("Retrying download in 5 seconds...")
-                import time
                 time.sleep(5)
 
     raise RuntimeError(f"ZIP download failed after {retries} attempts: {last_error}")
@@ -139,6 +140,9 @@ def extract_zip():
     logOTA(f"Created extract directory: {TMP_EXTRACT}")
 
     with zipfile.ZipFile(TMP_ZIP, "r") as zf:
+        bad_file = zf.testzip()
+        if bad_file is not None:
+            raise RuntimeError(f"Corrupt ZIP entry detected: {bad_file}")
         zf.extractall(TMP_EXTRACT)
 
     new_rpi = TMP_EXTRACT / "RPi"

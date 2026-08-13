@@ -433,6 +433,13 @@ def getFrameRate(config):
         logging.error(f"getFrameRate failed: {e}")
         return None
 
+
+def config_is_valid(config):
+    return bool(
+        config.get("cameraID", "").strip() and
+        config.get("ftpHost", "").strip() and
+        int(config.get("ftpPort", 0)) > 0
+    )
     
 #--------------------------------------------- Main Execution ------------------------------------------
 
@@ -463,7 +470,13 @@ try:
         time.sleep(1)
 
         #------------------ Request Config Data -----------------
-        uart.send("SEND CONFIG\n")
+        if config_is_valid(config):
+            uart.send("SEND CONFIG\n")
+        else:
+            print("Invalid config, requesting new config from ESP32")
+            log_no_time("Invalid config, requesting new config from ESP32")
+            uart.send("SEND CONFIG FORCED\n")
+        
         config_data = wait_for_uart(uart)
 
         if config_data is None:

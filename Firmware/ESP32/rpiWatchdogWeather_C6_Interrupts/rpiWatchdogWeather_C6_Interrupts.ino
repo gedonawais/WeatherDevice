@@ -20,11 +20,11 @@ static float  Vbat              = 0.0;
 unsigned long PiStartTime       = 0;
 unsigned long shutdownStart     = 0;
 unsigned long configStartMillis = 0;
-RTC_DATA_ATTR bool skipConfigPortal = false;    // should be false
+RTC_DATA_ATTR bool skipConfigPortal = true;    // should be false
 
 
 
-const uint32_t PI_TIMEOUT              = 8UL  * 60 * 1000;       // 8 mins    
+const uint32_t PI_TIMEOUT              = 60UL  * 60 * 1000;       // 8 mins    
 const uint32_t WDT_TIMEOUT             = 2UL  * 60 * 1000;       // 2 mins      
 const uint32_t CONFIG_TIMEOUT_MS       = 3UL  * 60 * 1000;      // 3 mins
 const uint32_t SHUTDOWN_TIMEOUT        = 3UL  * 60 * 1000;      // 3 mins 
@@ -359,12 +359,14 @@ void loop()
       Serial0.println(Vbat);
     }
 
-    if (cmd == "SEND CONFIG")
+    if (cmd == "SEND CONFIG" || cmd == "SEND CONFIG FORCED")
     {
       loadConfig();
-      if (prefs.getBool("configChanged", false))        // checking for configChanged variable, if it doesn't exist mark it as false
+      bool forceSend = (cmd == "SEND CONFIG FORCED");
+
+      if (forceSend || prefs.getBool("configChanged", false))        // checking for configChanged variable, if it doesn't exist mark it as false
       {
-        Serial.println("Sending Config");
+        Serial.println(forceSend ? "Force sending config" : "Sending Config");
         Serial0.print(cameraId); Serial0.print("|");
         Serial0.print(location); Serial0.print("|");
         Serial0.print(ftpHost);  Serial0.print("|");

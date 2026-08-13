@@ -435,6 +435,13 @@ def getFrameRate(config):
         logging.error(f"getFrameRate failed: {e}")
         return None
 
+def log_firmware_version():
+    try:
+        version = Path("/home/WeatherDevice/Firmware/version.txt").read_text().strip()
+    except Exception:
+        version = "0"
+    log_no_time(f"Firmware Version: {version}")
+
 
 def config_is_valid(config):
     return bool(
@@ -452,6 +459,7 @@ GPIO.setup(SHUTDOWN_COMPLETED, GPIO.OUT, initial=GPIO.HIGH)
 
 uart = UARTComm(port='/dev/serial0', baudrate=9600)
 mark_session_start()
+log_firmware_version()
 config = load_config()
 
 try:

@@ -18,6 +18,8 @@ from uart_comm import UARTComm
 from io import BytesIO
 import socket
 import sys  
+sys.path.append("/home/WeatherDevice/Firmware")
+import ota_update 
 
 
 BASE_DIR = "/home/WeatherDevice/Firmware/RPi"
@@ -520,6 +522,19 @@ try:
     else:
         if wait_for_internet():
             sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
+            ota_result = ota_update.run_ota_update(config)
+
+            if ota_result == "updated":
+                print("OTA update installed successfully. Shutting down to start new version on next boot")
+                logging.info("OTA update installed successfully. Shutting down to start new version on next boot")
+                keep_last_two_sessions()
+                safeShutdown("OTA update installed successfully")
+            elif ota_result == "failed":
+                print("OTA update failed, continuing normal flow")
+                logging.error("OTA update failed, continuing normal flow")
+            elif ota_result == "no_update":
+                print("No OTA update available, continuing normal flow")
+                logging.info("No OTA update available, continuing normal flow")
         else:
             log_no_time("Internet not available after PPP.")
             print("Internet not available after PPP.")

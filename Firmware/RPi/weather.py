@@ -535,6 +535,8 @@ try:
             if ota_result == "updated":
                 print("OTA update installed successfully. Rebooting")
                 logging.info("OTA update installed successfully. Rebooting")
+                keep_last_two_sessions()
+                time.sleep(1)
                 os.system("sudo reboot")
 
 

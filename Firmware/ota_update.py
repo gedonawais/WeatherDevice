@@ -226,11 +226,16 @@ def extract_zip():
         zf.extractall(TMP_EXTRACT)
 
     new_rpi = TMP_EXTRACT / "RPi"
-    if not new_rpi.is_dir():
-        raise RuntimeError("ZIP must contain a top-level RPi folder")
+    if new_rpi.is_dir():
+        logOTA(f"Extracted RPi folder found at: {new_rpi}")
+        return new_rpi
 
-    logOTA(f"Extracted RPi folder found at: {new_rpi}")
-    return new_rpi
+    extracted_items = list(TMP_EXTRACT.iterdir())
+    if not extracted_items:
+        raise RuntimeError("ZIP is empty")
+
+    logOTA("No top-level RPi folder found, using ZIP root as update source")
+    return TMP_EXTRACT
 
 
 def ignore_special_files(src, names):

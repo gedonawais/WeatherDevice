@@ -462,6 +462,7 @@ mark_session_start()
 log_firmware_version()
 config = load_config()
 
+
 try:
     BatteryData = "N/A"
 

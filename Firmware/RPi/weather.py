@@ -533,16 +533,22 @@ try:
             ota_result = ota_update.run_ota_update(config)
 
             if ota_result == "updated":
-                print("OTA update installed successfully. Shutting down to start new version on next boot")
-                logging.info("OTA update installed successfully. Shutting down to start new version on next boot")
+                print("OTA update installed successfully. Restarting application to load new version")
+                logging.info("OTA update installed successfully. Restarting application to load new version")
                 keep_last_two_sessions()
-                safeShutdown("OTA update installed successfully")
+                logging.info("OTA update installed successfully")
+
+                python = sys.executable
+                os.execv(python, [python] + sys.argv)
+
             elif ota_result == "failed":
                 print("OTA update failed, continuing normal flow")
                 logging.error("OTA update failed, continuing normal flow")
+
             elif ota_result == "no_update":
                 print("No OTA update available, continuing normal flow")
                 logging.info("No OTA update available, continuing normal flow")
+
         else:
             log_no_time("Internet not available after PPP.")
             print("Internet not available after PPP.")

@@ -18,8 +18,12 @@ OTA_LOG_PATH = BASE_DIR / "ota.log"
 TARGET_DIR = BASE_DIR / "RPi"
 BACKUP_DIR = BASE_DIR / "RPi_backup"
 VERSION_FILE = BASE_DIR / "version.txt"
-TMP_ZIP = Path(tempfile.gettempdir()) / "rpi_update_latest.zip"
+
 TMP_EXTRACT = Path(tempfile.gettempdir()) / "rpi_update_extract"
+
+PENDING_DIR = BASE_DIR / "ota_pending"
+PENDING_ZIP = PENDING_DIR / "pending_update.zip"
+PENDING_META = PENDING_DIR / "pending_meta.json"
 
 
 def logOTA(message):
@@ -78,16 +82,37 @@ def get_remote_file_info(url, timeout=30):
         total_size = int(content_length) if content_length is not None else None
         range_supported = "bytes" in accept_ranges.lower()
 
-    logOTA(
-        f"Remote file info: size={total_size}, range_supported={range_supported}"
-    )
+    logOTA(f"Remote file info: size={total_size}, range_supported={range_supported}")
     return total_size, range_supported
 
 
-def download_zip(url, expected_sha256=None, retries=5, timeout=60, chunk_size=1024 * 256):
+def verify_zip_sha256(zip_path, expected_sha256):
+    expected = expected_sha256.strip().lower()
+    logOTA(f"Verifying ZIP SHA-256: {zip_path}")
+
+    sha256 = hashlib.sha256()
+    with open(zip_path, "rb") as f:
+        while True:
+            chunk = f.read(1024 * 1024)
+            if not chunk:
+                break
+            sha256.update(chunk)
+
+    actual = sha256.hexdigest().lower()
+    logOTA(f"Calculated ZIP SHA-256: {actual}")
+
+    if actual != expected:
+        raise RuntimeError(f"SHA-256 mismatch: expected {expected}, got {actual}")
+
+    logOTA("ZIP SHA-256 verified successfully")
+
+
+def download_zip(url, dest_path, expected_sha256=None, retries=5, timeout=60, chunk_size=1024 * 256):
     logOTA(f"Downloading update ZIP from: {url}")
 
-    tmp_part = Path(str(TMP_ZIP) + ".part")
+    dest_path = Path(dest_path)
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_part = Path(str(dest_path) + ".part")
     last_error = None
 
     total_size, range_supported = get_remote_file_info(url)
@@ -97,28 +122,21 @@ def download_zip(url, expected_sha256=None, retries=5, timeout=60, chunk_size=10
             downloaded_size = tmp_part.stat().st_size if tmp_part.exists() else 0
 
             if total_size is not None and downloaded_size > total_size:
-                logOTA(
-                    f"Partial file larger than remote file ({downloaded_size} > {total_size}), restarting"
-                )
+                logOTA(f"Partial file larger than remote file ({downloaded_size} > {total_size}), restarting")
                 tmp_part.unlink(missing_ok=True)
                 downloaded_size = 0
 
             use_resume = range_supported and downloaded_size > 0
-
             headers = {}
             mode = "wb"
 
             if use_resume:
                 headers["Range"] = f"bytes={downloaded_size}-"
                 mode = "ab"
-                logOTA(
-                    f"Download attempt {attempt}/{retries}: resuming from byte {downloaded_size}"
-                )
+                logOTA(f"Download attempt {attempt}/{retries}: resuming from byte {downloaded_size}")
             else:
                 if downloaded_size > 0:
-                    logOTA(
-                        "Server does not support Range or resume not possible, restarting download from zero"
-                    )
+                    logOTA("Server does not support Range or resume not possible, restarting download from zero")
                     tmp_part.unlink(missing_ok=True)
                     downloaded_size = 0
                 logOTA(f"Download attempt {attempt}/{retries}: starting from zero")
@@ -128,15 +146,10 @@ def download_zip(url, expected_sha256=None, retries=5, timeout=60, chunk_size=10
                 status = getattr(response, "status", None)
 
                 if use_resume and status != 206:
-                    logOTA(
-                        f"Server did not honor Range request (HTTP {status}), restarting from zero"
-                    )
+                    logOTA(f"Server did not honor Range request (HTTP {status}), restarting from zero")
                     tmp_part.unlink(missing_ok=True)
                     downloaded_size = 0
-                    headers = {}
-                    req = Request(url, headers=headers)
-                    response.close()
-                    with urlopen(req, timeout=timeout) as response2:
+                    with urlopen(Request(url), timeout=timeout) as response2:
                         with open(tmp_part, "wb") as f:
                             while True:
                                 chunk = response2.read(chunk_size)
@@ -156,18 +169,16 @@ def download_zip(url, expected_sha256=None, retries=5, timeout=60, chunk_size=10
             logOTA(f"Downloaded {downloaded_size} bytes so far")
 
             if total_size is not None and downloaded_size != total_size:
-                raise RuntimeError(
-                    f"Download incomplete: got {downloaded_size} out of {total_size} bytes"
-                )
+                raise RuntimeError(f"Download incomplete: got {downloaded_size} out of {total_size} bytes")
 
-            if TMP_ZIP.exists():
-                TMP_ZIP.unlink()
+            if dest_path.exists():
+                dest_path.unlink()
 
-            os.replace(tmp_part, TMP_ZIP)
-            logOTA(f"ZIP downloaded successfully to: {TMP_ZIP}")
+            os.replace(tmp_part, dest_path)
+            logOTA(f"ZIP downloaded successfully to: {dest_path}")
 
             if expected_sha256:
-                verify_zip_sha256(TMP_ZIP, expected_sha256)
+                verify_zip_sha256(dest_path, expected_sha256)
 
             return
 
@@ -175,9 +186,9 @@ def download_zip(url, expected_sha256=None, retries=5, timeout=60, chunk_size=10
             last_error = e
             logOTA(f"Download attempt {attempt} failed: {type(e).__name__}: {e}")
 
-            if TMP_ZIP.exists():
+            if dest_path.exists():
                 try:
-                    TMP_ZIP.unlink()
+                    dest_path.unlink()
                 except Exception:
                     pass
 
@@ -188,30 +199,7 @@ def download_zip(url, expected_sha256=None, retries=5, timeout=60, chunk_size=10
     raise RuntimeError(f"ZIP download failed after {retries} attempts: {last_error}")
 
 
-def verify_zip_sha256(zip_path, expected_sha256):
-    expected = expected_sha256.strip().lower()
-    logOTA(f"Verifying ZIP SHA-256: {zip_path}")
-
-    sha256 = hashlib.sha256()
-    with open(zip_path, "rb") as f:
-        while True:
-            chunk = f.read(1024 * 1024)
-            if not chunk:
-                break
-            sha256.update(chunk)
-
-    actual = sha256.hexdigest().lower()
-    logOTA(f"Calculated ZIP SHA-256: {actual}")
-
-    if actual != expected:
-        raise RuntimeError(
-            f"SHA-256 mismatch: expected {expected}, got {actual}"
-        )
-
-    logOTA("ZIP SHA-256 verified successfully")
-
-
-def extract_zip():
+def extract_zip(zip_path):
     logOTA("Extracting ZIP...")
     if TMP_EXTRACT.exists():
         shutil.rmtree(TMP_EXTRACT)
@@ -219,7 +207,7 @@ def extract_zip():
     TMP_EXTRACT.mkdir(parents=True, exist_ok=True)
     logOTA(f"Created extract directory: {TMP_EXTRACT}")
 
-    with zipfile.ZipFile(TMP_ZIP, "r") as zf:
+    with zipfile.ZipFile(zip_path, "r") as zf:
         bad_file = zf.testzip()
         if bad_file is not None:
             raise RuntimeError(f"Corrupt ZIP entry detected: {bad_file}")
@@ -307,7 +295,89 @@ def merge_tree(src, dst):
             logOTA(f"Copied file: {src_item} -> {dst_item}")
 
 
-def run_ota_update(config):
+def has_pending_ota():
+    return PENDING_ZIP.exists() and PENDING_META.exists()
+
+
+def save_pending_meta(meta):
+    PENDING_DIR.mkdir(parents=True, exist_ok=True)
+    with open(PENDING_META, "w") as f:
+        json.dump(meta, f, indent=4)
+
+
+def load_pending_meta():
+    if not PENDING_META.exists():
+        return None
+    try:
+        with open(PENDING_META, "r") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def clear_pending_ota():
+    try:
+        if PENDING_DIR.exists():
+            shutil.rmtree(PENDING_DIR)
+            logOTA("Cleared pending OTA")
+    except Exception as e:
+        logOTA(f"Failed to clear pending OTA: {e}")
+
+
+def apply_pending_ota(config):
+    if not has_pending_ota():
+        return "no_pending"
+
+    clear_ota_log()
+
+    try:
+        meta = load_pending_meta()
+        if not meta:
+            raise RuntimeError("Pending OTA metadata missing")
+
+        pending_version = str(meta.get("version", "")).strip()
+        pending_sha256 = str(meta.get("sha256", "")).strip().lower()
+
+        if not pending_version:
+            raise RuntimeError("Pending OTA version missing")
+
+        verify_zip_sha256(PENDING_ZIP, pending_sha256)
+        new_rpi = extract_zip(PENDING_ZIP)
+
+        if BACKUP_DIR.exists():
+            shutil.rmtree(BACKUP_DIR)
+
+        if TARGET_DIR.exists():
+            logOTA(f"Backing up current RPi folder from {TARGET_DIR} to {BACKUP_DIR}")
+            shutil.copytree(TARGET_DIR, BACKUP_DIR, ignore=ignore_special_files)
+
+        try:
+            if not TARGET_DIR.exists():
+                TARGET_DIR.mkdir(parents=True, exist_ok=True)
+
+            logOTA(f"Applying pending OTA from {new_rpi} into {TARGET_DIR}")
+            merge_tree(new_rpi, TARGET_DIR)
+            write_local_version(pending_version)
+
+            if BACKUP_DIR.exists():
+                shutil.rmtree(BACKUP_DIR)
+
+            clear_pending_ota()
+            upload_ota_status(config, "success", "OTA applied successfully", pending_version)
+            return "updated"
+
+        except Exception as install_error:
+            logOTA(f"Installation failed: {type(install_error).__name__}: {install_error}")
+            restore_backup()
+            raise
+
+    except Exception as e:
+        logOTA(f"Apply pending OTA failed: {type(e).__name__}: {e}")
+        upload_ota_status(config, "failed", f"{type(e).__name__}: {e}")
+        return "failed"
+
+
+def check_and_download_ota(config):
     clear_ota_log()
 
     try:
@@ -321,57 +391,35 @@ def run_ota_update(config):
         logOTA(f"Remote version: {remote_version}")
 
         if not zip_url:
-            logOTA("No ZIP URL found in metadata")
             upload_ota_status(config, "failed", "No ZIP URL found in metadata", remote_version)
             return "failed"
 
         if not zip_sha256:
-            logOTA("No SHA-256 found in metadata")
             upload_ota_status(config, "failed", "No SHA-256 found in metadata", remote_version)
             return "failed"
 
         if remote_version == local_version:
-            logOTA("No update available")
             upload_ota_status(config, "no_update", "No update available", remote_version)
             return "no_update"
 
-        logOTA("New update available")
+        pending = load_pending_meta()
+        if pending and str(pending.get("version", "")).strip() == remote_version and PENDING_ZIP.exists():
+            upload_ota_status(config, "pending_update", "Update already downloaded", remote_version)
+            return "pending_update"
 
-        download_zip(zip_url, expected_sha256=zip_sha256)
-        new_rpi = extract_zip()
+        download_zip(zip_url, PENDING_ZIP, expected_sha256=zip_sha256)
 
-        if BACKUP_DIR.exists():
-            logOTA(f"Removing old backup: {BACKUP_DIR}")
-            shutil.rmtree(BACKUP_DIR)
+        save_pending_meta({
+            "version": remote_version,
+            "sha256": zip_sha256,
+            "url": zip_url,
+            "downloaded_at": time.strftime("%Y-%m-%dT%H:%M:%S")
+        })
 
-        if TARGET_DIR.exists():
-            logOTA(f"Backing up current RPi folder from {TARGET_DIR} to {BACKUP_DIR}")
-            shutil.copytree(TARGET_DIR, BACKUP_DIR, ignore=ignore_special_files)
-
-        try:
-            if not TARGET_DIR.exists():
-                logOTA(f"Creating target directory: {TARGET_DIR}")
-                TARGET_DIR.mkdir(parents=True, exist_ok=True)
-
-            logOTA(f"Merging extracted files from {new_rpi} into {TARGET_DIR}")
-            merge_tree(new_rpi, TARGET_DIR)
-
-            write_local_version(remote_version)
-            logOTA("OTA update completed successfully")
-
-            if BACKUP_DIR.exists():
-                logOTA(f"Removing backup after successful install: {BACKUP_DIR}")
-                shutil.rmtree(BACKUP_DIR)
-
-            upload_ota_status(config, "success", "OTA update completed successfully", remote_version)
-            return "updated"
-
-        except Exception as install_error:
-            logOTA(f"Installation failed: {type(install_error).__name__}: {install_error}")
-            restore_backup()
-            raise
+        upload_ota_status(config, "pending_update", "Update downloaded and pending install", remote_version)
+        return "pending_update"
 
     except Exception as e:
-        logOTA(f"OTA update failed: {type(e).__name__}: {e}")
+        logOTA(f"OTA download failed: {type(e).__name__}: {e}")
         upload_ota_status(config, "failed", f"{type(e).__name__}: {e}")
         return "failed"

@@ -461,6 +461,8 @@ uart = UARTComm(port='/dev/serial0', baudrate=9600)
 mark_session_start()
 log_firmware_version()
 config = load_config()
+ota_apply_result = ota_update.apply_pending_ota(config)
+log_no_time(f"Pending OTA apply result: {ota_apply_result}")
 
 
 try:
@@ -531,23 +533,8 @@ try:
     else:
         if wait_for_internet():
             sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
-            ota_result = ota_update.run_ota_update(config)
-
-            if ota_result == "updated":
-                print("OTA update installed successfully. Rebooting")
-                logging.info("OTA update installed successfully. Rebooting")
-                keep_last_two_sessions()
-                time.sleep(1)
-                os.system("sudo reboot")
-
-
-            elif ota_result == "failed":
-                print("OTA update failed, continuing normal flow")
-                logging.error("OTA update failed, continuing normal flow")
-
-            elif ota_result == "no_update":
-                print("No OTA update available, continuing normal flow")
-                logging.info("No OTA update available, continuing normal flow")
+            ota_result = ota_update.check_and_download_ota(config)
+            logging.info(f"OTA result: {ota_result}")
 
         else:
             log_no_time("Internet not available after PPP.")

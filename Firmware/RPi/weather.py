@@ -449,7 +449,38 @@ def config_is_valid(config):
         config.get("ftpHost", "").strip() and
         int(config.get("ftpPort", 0)) > 0
     )
-    
+
+
+def is_low_battery(battery_value, threshold=9.6):
+    try:
+        return float(str(battery_value).strip()) < threshold
+    except (TypeError, ValueError):
+        return False
+
+
+def upload_low_battery_status(config, battery_value):
+    try:
+        response = requests.post(
+            UPLOAD_URL,
+            data={
+                "secret": config.get("secret", "GeiseitoFi"),
+                "cameraID": config.get("cameraID", ""),
+                "deviceID": config.get("deviceID", ""),
+                "location": config.get("location", ""),
+                "battery": battery_value,
+                "sleepReason": "low_battery",
+                "sleepMinutes": 120,
+            },
+            timeout=30,
+        )
+        logging.info(f"Low battery status upload HTTP {response.status_code}")
+        return response.status_code == 200
+    except Exception as e:
+        logging.error(f"Low battery status upload failed: {e}")
+        return False
+
+
+
 #--------------------------------------------- Main Execution ------------------------------------------
 
 GPIO.setmode(GPIO.BCM)
@@ -467,16 +498,20 @@ log_no_time(f"Pending OTA apply result: {ota_apply_result}")
 
 try:
     BatteryData = "N/A"
+    lowBatteryDetected = False
 
     try:
-        #------------------ UART Communication with ESP32 -----------------
-
         #------------------ Request Battery Voltage -----------------
         uart.send("SEND VOLTAGE\n")
         BatteryData = wait_for_uart(uart)
 
         if BatteryData is None:
             log_no_time("No response from ESP about Battery")
+
+        elif is_low_battery(BatteryData):
+            lowBatteryDetected = True
+            log_no_time(f"Battery: {BatteryData}! Low Battery Detected. Skipping Uploads and Shutting Down")
+
         else:
             log_no_time(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
 
@@ -533,8 +568,15 @@ try:
     else:
         if wait_for_internet():
             sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
-            ota_result = ota_update.check_and_download_ota(config)
-            logging.info(f"OTA result: {ota_result}")
+            
+            if lowBatteryDetected:
+                logging.info(f"Low battery detected: {BatteryData}. Uploading low battery status to server.")
+                upload_low_battery_status(config, BatteryData)
+                keep_last_two_sessions()
+                safeShutdown(f"Low battery detected: {BatteryData}. Uploaded status to server and shutting down.")
+            else:
+                ota_result = ota_update.check_and_download_ota(config)
+                logging.info(f"OTA result: {ota_result}")
 
         else:
             log_no_time("Internet not available after PPP.")

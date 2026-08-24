@@ -28,7 +28,7 @@ const uint32_t PI_TIMEOUT              = 8UL  * 60 * 1000;          // 8 mins
 const uint32_t WDT_TIMEOUT             = 2UL  * 60 * 1000;         // 2 mins      
 const uint32_t CONFIG_TIMEOUT_MS       = 3UL  * 60 * 1000;        // 3 mins
 const uint32_t SHUTDOWN_TIMEOUT        = 3UL  * 60 * 1000;        // 3 mins 
-const uint64_t SLEEP_TIME_BATTERY_DIE  = 120UL * 60 * 1000000;   // 120 mins  
+const uint64_t SLEEP_TIME_BATTERY_DIE  = 60UL * 60 * 1000000;    // 60 mins  
 uint64_t       SLEEP_TIME              = 20UL * 60 * 1000000;   // 20 mins, will also be fetched by webserver of esp and will be initilaised in function startNormalMode
 uint8_t        PI_RESTARTS             = 0;
 

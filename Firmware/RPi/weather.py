@@ -451,7 +451,7 @@ def config_is_valid(config):
     )
 
 
-def is_low_battery(battery_value, threshold=9.6):
+def is_low_battery(battery_value, threshold=10.3):
     try:
         return float(str(battery_value).strip()) < threshold
     except (TypeError, ValueError):
@@ -568,7 +568,7 @@ try:
     else:
         if wait_for_internet():
             sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
-            
+
             if lowBatteryDetected:
                 logging.info(f"Low battery detected: {BatteryData}. Uploading low battery status to server.")
                 upload_low_battery_status(config, BatteryData)

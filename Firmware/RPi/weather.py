@@ -451,7 +451,7 @@ def config_is_valid(config):
     )
 
 
-def is_low_battery(battery_value, threshold=10.3):
+def is_low_battery(battery_value, threshold=9.6):
     try:
         return float(str(battery_value).strip()) < threshold
     except (TypeError, ValueError):

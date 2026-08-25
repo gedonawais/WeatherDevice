@@ -480,6 +480,21 @@ def upload_low_battery_status(config, battery_value):
         return False
 
 
+def fix_dns():
+    try:
+        socket.gethostbyname("emea-edu.com")
+        logging.info("DNS already working")
+        return
+    except Exception:
+        pass
+
+    try:
+        with open("/etc/resolv.conf", "w") as f:
+            f.write("nameserver 1.1.1.1\nnameserver 8.8.8.8\n")
+        time.sleep(1)
+        logging.info("DNS resolver updated")
+    except Exception as e:
+        logging.error(f"Failed to update DNS resolver: {e}")
 
 #--------------------------------------------- Main Execution ------------------------------------------
 
@@ -567,6 +582,7 @@ try:
         safeShutdown("PPP connection failed")
     else:
         if wait_for_internet():
+            fix_dns()
             sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
 
             if lowBatteryDetected:

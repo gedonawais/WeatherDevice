@@ -25,7 +25,7 @@ Open the Raspberry Pi configuration tool:
 ```bash
 sudo raspi-config
 ```
-Set System Date and Time and WLAN Country in the Localisation menu
+Set System Date and Time and WLAN Country in the Localisation menu if not setup during installaion of RPi image
 Set Wireless LAN SSID and Password (for wifi)
 
 Navigate to:

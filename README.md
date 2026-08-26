@@ -178,7 +178,7 @@ This installs all required libraries and dependencies.
 ---
 
 # 9. Disable Wi-Fi (Optional)
-Network Manager is already disabled so no need to run this
+NetworkManager is already disabled so no need to run this
 Disable Wi-Fi:
 
 ```bash
@@ -190,6 +190,20 @@ Check Wi-Fi status:
 ```bash
 nmcli radio
 ```
+
+---
+
+---
+
+# Restart Raspberry Pi
+
+Reboot the device:
+
+```bash
+sudo reboot
+```
+
+Wait until the Raspberry Pi boots again.
 
 ---
 
@@ -263,19 +277,7 @@ Restart the service:
 sudo systemctl restart weather.service
 ```
 
----
 
-# Restart Raspberry Pi
-
-Reboot the device:
-
-```bash
-sudo reboot
-```
-
-Wait until the Raspberry Pi boots again.
-
----
 # Setup Complete
 
 The Raspberry Pi Zero 2W is now configured and ready to run the Weather Device application.

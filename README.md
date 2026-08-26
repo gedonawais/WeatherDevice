@@ -25,7 +25,7 @@ Open the Raspberry Pi configuration tool:
 ```bash
 sudo raspi-config
 ```
-Set System Date and Time, WLAN Country in Localisation menu
+Set System Date and Time and WLAN Country in the Localisation menu
 Set Wireless LAN SSID and Password (for wifi)
 
 Navigate to:
@@ -44,33 +44,12 @@ This allows the Raspberry Pi to automatically log in after boot.
 
 ## 2.2 Disable sudo Password Requirement
 
-Open the sudo configuration file:
-
-```bash
-sudo visudo
+Navigate to:
 ```
-
-Add the following line at the end:
-
-```text
-<username> ALL=(ALL) NOPASSWD: ALL
+System Options
+    → Admin Password
+        → Disable
 ```
-
-Replace:
-
-```
-<username>
-```
-
-with your Raspberry Pi username.
-
-Example:
-
-```text
-pi ALL=(ALL) NOPASSWD: ALL
-```
-
-Save and exit.
 
 This allows scripts and services to execute sudo commands without requiring a password.
 

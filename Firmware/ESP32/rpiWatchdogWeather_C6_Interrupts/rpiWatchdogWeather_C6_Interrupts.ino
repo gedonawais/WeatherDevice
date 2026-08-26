@@ -13,6 +13,7 @@
 const char* apSSID = "ESP32-CAMERA-CONFIG";
 const char* apPassword = "12345678";
 
+bool          lowBattery        = false;
 bool          checkPiStatus     = false;
 bool          configMode        = false;
 volatile bool imageSentFlag     = false;
@@ -28,7 +29,7 @@ const uint32_t PI_TIMEOUT              = 8UL  * 60 * 1000;          // 8 mins
 const uint32_t WDT_TIMEOUT             = 2UL  * 60 * 1000;         // 2 mins      
 const uint32_t CONFIG_TIMEOUT_MS       = 3UL  * 60 * 1000;        // 3 mins
 const uint32_t SHUTDOWN_TIMEOUT        = 3UL  * 60 * 1000;        // 3 mins 
-const uint64_t SLEEP_TIME_BATTERY_DIE  = 60UL * 60 * 1000000;    // 60 mins  
+const uint64_t SLEEP_TIME_BATTERY_DIE  = 5UL * 60 * 1000000;    // 60 mins  
 uint64_t       SLEEP_TIME              = 20UL * 60 * 1000000;   // 20 mins, will also be fetched by webserver of esp and will be initilaised in function startNormalMode
 uint8_t        PI_RESTARTS             = 0;
 
@@ -290,11 +291,10 @@ void setup()
   Serial.print("Raw = "); Serial.println(raw);
   Serial.print("Battery Voltage = "); Serial.println(Vbat);
 
-  if (Vbat < 9.60)
+  if (Vbat < 9.65)        // checking battery levels
   {
-    Serial.println("Battery too low, going to sleep...");
-    esp_sleep_enable_timer_wakeup(SLEEP_TIME_BATTERY_DIE);
-    esp_deep_sleep_start();
+    Serial.println("Battery too low, Turning on RPi just to send low battery information");
+    lowBattery = true;
   }
 
   prefs.begin("cam-config", false);
@@ -342,7 +342,14 @@ void loop()
   
   if (checkPiStatus && (digitalRead(SHUTDOWN_COMPLETE_STATUS_FROM_RPI) == LOW ))
   {
-    shutdownAndSleep("Error/Exception occured at RPi side");
+    if (lowBattery)
+    {
+      shutdownAndSleep("RPi shutdown due to low battery");
+    }
+    else
+    {
+      shutdownAndSleep("RPi shutdown due to Error/Exception");
+    }
   }
 
   if(Serial0.available())
@@ -430,7 +437,7 @@ void loop()
 
     Serial.println("Image Sent to server! Sending shutdown command to Pi.");
     digitalWrite(SEND_SHUTDOWN_SIGNAL_TO_RPI, HIGH);
-    shutdownAndSleep("Image Successfully Sent");
+    shutdownAndSleep("RPi shutting down after Image Successfully Sent");
   }
 }
 
@@ -489,10 +496,21 @@ void shutdownAndSleep(String reason)
 
   skipConfigPortal = true;
   Serial.print("ESP going to deep sleep for ");
-  Serial.println(SLEEP_TIME);
-  delay(1000);
-  esp_sleep_enable_timer_wakeup(SLEEP_TIME);
-  esp_deep_sleep_start();
+
+  if (lowBattery)
+  {
+    Serial.println(SLEEP_TIME_BATTERY_DIE);
+    esp_sleep_enable_timer_wakeup(SLEEP_TIME_BATTERY_DIE);
+    delay(100);
+    esp_deep_sleep_start();
+  }
+  else
+  {
+    Serial.println(SLEEP_TIME);
+    esp_sleep_enable_timer_wakeup(SLEEP_TIME);
+    delay(100);
+    esp_deep_sleep_start();
+  }
 }
 
 
@@ -521,7 +539,7 @@ void checkPiTimeout()
     if (PI_RESTARTS >= 2)
     {
       Serial.println("Pi failed after max restarts. Forcing sleep.");
-      shutdownAndSleep("Pi max restarts done");
+      shutdownAndSleep("Pi failed after max restarts. Forcing Sleep");
     }
   }
 }

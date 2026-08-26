@@ -469,7 +469,7 @@ def upload_low_battery_status(config, battery_value):
                 "location": config.get("location", ""),
                 "battery": battery_value,
                 "sleepReason": "low_battery",
-                "sleepMinutes": 60,
+                "sleepMinutes": 120,
             },
             timeout=30,
         )

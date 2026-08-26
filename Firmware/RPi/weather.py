@@ -582,12 +582,18 @@ try:
         safeShutdown("PPP connection failed")
     else:
         if wait_for_internet():
+            time.sleep(1)  # Give a moment for DNS to stabilize
             fix_dns()
             sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
 
             if lowBatteryDetected:
                 logging.info(f"Low battery detected: {BatteryData}. Uploading low battery status to server.")
                 upload_low_battery_status(config, BatteryData)
+                try:
+                    sim_ppp.close_connection(ppp_process)
+                except Exception as e:
+                    logging.error(f"Error closing PPP connection: {e}")
+                
                 keep_last_two_sessions()
                 safeShutdown(f"Low battery detected: {BatteryData}. Uploaded status to server and shutting down.")
             else:

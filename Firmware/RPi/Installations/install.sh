@@ -12,7 +12,6 @@ sudo apt install -y \
     python3-dev \
     libatlas3-base \
     ppp \
-    chrony \
     net-tools \
     libopencv-dev
 

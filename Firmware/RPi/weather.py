@@ -483,7 +483,7 @@ def upload_low_battery_status(config, battery_value):
 def fix_dns():
     try:
         socket.gethostbyname("emea-edu.com")
-        logging.info("DNS already working")
+        log_no_time("DNS already working")
         return
     except Exception:
         pass
@@ -582,7 +582,6 @@ try:
         safeShutdown("PPP connection failed")
     else:
         if wait_for_internet():
-            time.sleep(1)  # Give a moment for DNS to stabilize
             fix_dns()
             sync_time_after_ppp()  # syncs clock AND re-inits logging with correct timestamps
 

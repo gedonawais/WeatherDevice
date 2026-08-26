@@ -212,20 +212,13 @@ Wait until the Raspberry Pi boots again.
 ## Start Weather Service
 
 ```bash
+sudo systemctl enable weather.service
 sudo systemctl start weather.service
 ```
 
 ---
 
-# 11. Enable Service at Boot
 
-To automatically start the weather application after every reboot:
-
-```bash
-sudo systemctl enable weather.service
-```
-
----
 
 # 12. Check Service Status
 
@@ -255,7 +248,7 @@ sudo systemctl restart weather.service
 
 ---
 
-# 12. Updating the Software
+## Updating the Software
 
 To update the Weather Device software:
 

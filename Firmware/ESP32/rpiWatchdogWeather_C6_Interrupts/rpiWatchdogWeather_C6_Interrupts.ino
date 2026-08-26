@@ -290,7 +290,7 @@ void setup()
   Serial.print("Raw = "); Serial.println(raw);
   Serial.print("Battery Voltage = "); Serial.println(Vbat);
 
-  if (Vbat < 9.6)
+  if (Vbat < 9.60)
   {
     Serial.println("Battery too low, going to sleep...");
     esp_sleep_enable_timer_wakeup(SLEEP_TIME_BATTERY_DIE);

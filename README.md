@@ -165,19 +165,7 @@ This installs required system files, services, and configurations.
 
 ---
 
-# 8. Restart Raspberry Pi
-
-Reboot the device:
-
-```bash
-sudo reboot
-```
-
-Wait until the Raspberry Pi boots again.
-
----
-
-# 9. Install Python Dependencies
+# 8. Install Python Dependencies
 
 Run the installation script:
 
@@ -189,7 +177,7 @@ This installs all required libraries and dependencies.
 
 ---
 
-# 10. Disable Wi-Fi (Optional)
+# 9. Disable Wi-Fi (Optional)
 Network Manager is already disabled so no need to run this
 Disable Wi-Fi:
 
@@ -205,7 +193,7 @@ nmcli radio
 
 ---
 
-# 11. Weather Service Management
+# 10. Weather Service Management
 
 ## Start Weather Service
 
@@ -215,7 +203,7 @@ sudo systemctl start weather.service
 
 ---
 
-## Enable Service at Boot
+# 11. Enable Service at Boot
 
 To automatically start the weather application after every reboot:
 
@@ -225,7 +213,7 @@ sudo systemctl enable weather.service
 
 ---
 
-## Check Service Status
+# 12. Check Service Status
 
 ```bash
 sudo systemctl status weather.service
@@ -277,6 +265,17 @@ sudo systemctl restart weather.service
 
 ---
 
+# Restart Raspberry Pi
+
+Reboot the device:
+
+```bash
+sudo reboot
+```
+
+Wait until the Raspberry Pi boots again.
+
+---
 # Setup Complete
 
 The Raspberry Pi Zero 2W is now configured and ready to run the Weather Device application.

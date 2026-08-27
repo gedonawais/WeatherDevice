@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 import requests
 
-META_URL = "https://emea-edu.com/cameraDashboard/ota_meta.json"
+BASE_URL = "https://emea-edu.com/cameraDashboard/OTA_Updates"
 UPLOAD_URL = "https://emea-edu.com/cameraDashboard/upload.php"
 
 BASE_DIR = Path("/home/WeatherDevice/Firmware")
@@ -65,34 +65,28 @@ def write_local_version(version):
     logOTA(f"Saved new local version: {version}")
 
 
-def fetch_meta():
-    logOTA(f"Fetching OTA metadata from: {META_URL}")
-    with urlopen(META_URL, timeout=30) as response:
+def fetch_json(url):
+    logOTA(f"Fetching OTA metadata from: {url}")
+    with urlopen(url, timeout=30) as response:
         meta = json.loads(response.read().decode("utf-8"))
     logOTA(f"Remote metadata: {meta}")
     return meta
 
 
-def is_update_targeted_for_device(meta, config):
-    target_device = str(meta.get("target_device", "all")).strip()
-    target_type = str(meta.get("target_type", "")).strip().lower()
+def fetch_meta_for_device(config):
     device_id = str(config.get("deviceID", "")).strip()
 
-    if not target_type:
-        target_type = "all" if target_device == "all" else "single"
+    if device_id:
+        device_meta_url = f"{BASE_URL}/{device_id}/meta.json"
+        try:
+            logOTA(f"Trying device-specific OTA metadata: {device_meta_url}")
+            return fetch_json(device_meta_url)
+        except Exception as e:
+            logOTA(f"No device-specific OTA metadata found: {type(e).__name__}: {e}")
 
-    logOTA(f"OTA target_type: {target_type}")
-    logOTA(f"OTA target_device: {target_device}")
-    logOTA(f"Current deviceID: {device_id}")
-
-    if target_type == "all" or target_device == "all":
-        return True
-
-    if not device_id:
-        logOTA("Device has no deviceID, cannot match targeted OTA")
-        return False
-
-    return device_id == target_device
+    global_meta_url = f"{BASE_URL}/all/meta.json"
+    logOTA(f"Falling back to global OTA metadata: {global_meta_url}")
+    return fetch_json(global_meta_url)
 
 
 def get_remote_file_info(url, timeout=30):
@@ -404,17 +398,13 @@ def check_and_download_ota(config):
 
     try:
         logOTA("Starting OTA update check...")
-        meta = fetch_meta()
+        meta = fetch_meta_for_device(config)
         remote_version = str(meta.get("version", "0")).strip()
         zip_url = str(meta.get("url", "")).strip()
         zip_sha256 = str(meta.get("sha256", "")).strip().lower()
         local_version = read_local_version()
 
         logOTA(f"Remote version: {remote_version}")
-
-        if not is_update_targeted_for_device(meta, config):
-            upload_ota_status(config, "no_update", "No update targeted for this device", remote_version)
-            return "no_update"
 
         if not zip_url:
             upload_ota_status(config, "failed", "No ZIP URL found in metadata", remote_version)
@@ -439,9 +429,7 @@ def check_and_download_ota(config):
             "version": remote_version,
             "sha256": zip_sha256,
             "url": zip_url,
-            "downloaded_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
-            "target_device": str(meta.get("target_device", "all")).strip(),
-            "target_type": str(meta.get("target_type", "")).strip().lower()
+            "downloaded_at": time.strftime("%Y-%m-%dT%H:%M:%S")
         })
 
         upload_ota_status(config, "pending_update", "Update downloaded and pending install", remote_version)

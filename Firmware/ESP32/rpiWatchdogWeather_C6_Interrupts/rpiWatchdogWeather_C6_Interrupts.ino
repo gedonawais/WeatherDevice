@@ -505,10 +505,11 @@ void shutdownAndSleep(String reason)
   delay(500);
 
   skipConfigPortal = true;
-  Serial.print("ESP going to deep sleep for ");
+  Serial.println("ESP going to deep sleep:");
 
   if (lowBattery)
   {
+    Serial.print("Low Battery.Sending Data to Server and  Sleeping for ")
     Serial.println(SLEEP_TIME_BATTERY_DIE);
     esp_sleep_enable_timer_wakeup(SLEEP_TIME_BATTERY_DIE);
     delay(100);

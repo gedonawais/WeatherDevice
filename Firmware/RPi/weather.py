@@ -496,6 +496,7 @@ def fix_dns():
     except Exception as e:
         logging.error(f"Failed to update DNS resolver: {e}")
 
+
 #--------------------------------------------- Main Execution ------------------------------------------
 
 GPIO.setmode(GPIO.BCM)

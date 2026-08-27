@@ -85,8 +85,12 @@ def fetch_meta_for_device(config):
             logOTA(f"No device-specific OTA metadata found: {type(e).__name__}: {e}")
 
     global_meta_url = f"{BASE_URL}/all/meta.json"
-    logOTA(f"Falling back to global OTA metadata: {global_meta_url}")
-    return fetch_json(global_meta_url)
+    try:
+        logOTA(f"Falling back to global OTA metadata: {global_meta_url}")
+        return fetch_json(global_meta_url)
+    except Exception as e:
+        logOTA(f"No global OTA metadata found: {type(e).__name__}: {e}")
+        return None
 
 
 def get_remote_file_info(url, timeout=30):
@@ -399,6 +403,12 @@ def check_and_download_ota(config):
     try:
         logOTA("Starting OTA update check...")
         meta = fetch_meta_for_device(config)
+
+        if not meta:
+            logOTA("No OTA metadata found for this device and no global OTA found")
+            upload_ota_status(config, "no_update", "No OTA update available")
+            return "no_update"
+
         remote_version = str(meta.get("version", "0")).strip()
         zip_url = str(meta.get("url", "")).strip()
         zip_sha256 = str(meta.get("sha256", "")).strip().lower()

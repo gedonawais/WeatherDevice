@@ -291,11 +291,21 @@ void setup()
   Serial.print("Raw = "); Serial.println(raw);
   Serial.print("Battery Voltage = "); Serial.println(Vbat);
 
-  if (Vbat < 9.65)        // checking battery levels
+
+  if (Vbat < 9.65 && Vbat >= 9.60)                                                  // Checking battery levels
   {
     Serial.println("Battery too low, Turning on RPi just to send low battery information");
     lowBattery = true;
   }
+  else if (Vbat < 9.60)
+  {
+    Serial.print("Going into deep sleep for");
+    Serial.println(SLEEP_TIME_BATTERY_DIE);
+    esp_sleep_enable_timer_wakeup(SLEEP_TIME_BATTERY_DIE);
+    delay(100);
+    esp_deep_sleep_start();
+  }
+
 
   prefs.begin("cam-config", false);
   if (!skipConfigPortal)

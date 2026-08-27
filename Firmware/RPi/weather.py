@@ -615,6 +615,7 @@ try:
 
 
     #------------------ Capture Image -----------------
+    cameraFailed = False
     try:
         print("Capturing image...")
         picam2 = Picamera2()
@@ -631,30 +632,31 @@ try:
     except Exception as e:
         print(f"Camera Error:{e}") 
         logging.error(f"Camera Error:{e}")
-        keep_last_two_sessions()
-        safeShutdown("Camera Error")
-    try:
-        subprocess.run(
-            [
-            "python3",
-            os.path.join(BASE_DIR, "run_pipeline.py"),
-            "--input", IMAGE_PATH,
-            "--output", OUTPUT_IMAGE_PATH,
-            "--weather-onnx", os.path.join(BASE_DIR, "weathernet.onnx"),
-            "--classes", os.path.join(BASE_DIR, "class_to_idx.json"),
-            "--yolox-onnx", os.path.join(BASE_DIR, "model.onnx"),
-            "--yolox-classes", os.path.join(BASE_DIR, "classes.txt"),
-            ],
-        check=True,
-        capture_output=True,
-        text=True,
-        )
-        logging.info("Pipeline finished successfully")
+        cameraFailed = True
 
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Pipeline failed with return code {e.returncode}")
-        logging.error(f"Pipeline stdout:\n{e.stdout}")
-        logging.error(f"Pipeline stderr:\n{e.stderr}")
+    if not cameraFailed:
+        try:
+            subprocess.run(
+                [
+                "python3",
+                os.path.join(BASE_DIR, "run_pipeline.py"),
+                "--input", IMAGE_PATH,
+                "--output", OUTPUT_IMAGE_PATH,
+                "--weather-onnx", os.path.join(BASE_DIR, "weathernet.onnx"),
+                "--classes", os.path.join(BASE_DIR, "class_to_idx.json"),
+                "--yolox-onnx", os.path.join(BASE_DIR, "model.onnx"),
+                "--yolox-classes", os.path.join(BASE_DIR, "classes.txt"),
+                ],
+            check=True,
+            capture_output=True,
+            text=True,
+            )
+            logging.info("Pipeline finished successfully")
+
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Pipeline failed with return code {e.returncode}")
+            logging.error(f"Pipeline stdout:\n{e.stdout}")
+            logging.error(f"Pipeline stderr:\n{e.stderr}")
 
 
     # Appending JSON with battery data
@@ -672,61 +674,61 @@ try:
     except Exception as e:
         print (e)
 
-    #Uploading FTP
-    FTP_success = False
-    nameImage = f"Image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-    json_name = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    if not cameraFailed:
+        #Uploading FTP
+        FTP_success = False
+        nameImage = f"Image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+        json_name = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
 
-    logging.info(
-    f"FTP config: protocol={config.get('protocol')}, "
-    f"host={config.get('ftpHost')}, "
-    f"port={config.get('ftpPort')}, "
-    f"user={config.get('ftpUser')}, "
-    f"path={config.get('ftpPath')}"
-    )
+        logging.info(
+        f"FTP config: protocol={config.get('protocol')}, "
+        f"host={config.get('ftpHost')}, "
+        f"port={config.get('ftpPort')}, "
+        f"user={config.get('ftpUser')}, "
+        f"path={config.get('ftpPath')}"
+        )
 
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            logging.info(f"Uploading image via {config.get('protocol', 'ftp')}: images/{nameImage}")
-            resp1 = upload_file(config, OUTPUT_IMAGE_PATH, f'images/{nameImage}')
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                logging.info(f"Uploading image via {config.get('protocol', 'ftp')}: images/{nameImage}")
+                resp1 = upload_file(config, OUTPUT_IMAGE_PATH, f'images/{nameImage}')
 
-            logging.info(f"Uploading json via {config.get('protocol', 'ftp')}: json/{json_name}")
-            resp2 = upload_file(config, PIPELINE_JSON, f'json/{json_name}')
+                logging.info(f"Uploading json via {config.get('protocol', 'ftp')}: json/{json_name}")
+                resp2 = upload_file(config, PIPELINE_JSON, f'json/{json_name}')
 
-            if config.get("protocol", "ftp").lower() == "sftp":
-                print(f"SFTP- Image and JSON Upload Successful on attempt {attempt}")
-                logging.info(f"SFTP- Image and JSON Upload Successful on attempt {attempt}")
-                FTP_success = True
-                break
-
-            else:
-                if resp1.startswith('226') and resp2.startswith('226'):
-                    print(f"FTP- Image and JSON Upload Successful on attempt {attempt}")
-                    logging.info(f"FTP- Image and JSON Upload Successful on attempt {attempt}")
+                if config.get("protocol", "ftp").lower() == "sftp":
+                    print(f"SFTP- Image and JSON Upload Successful on attempt {attempt}")
+                    logging.info(f"SFTP- Image and JSON Upload Successful on attempt {attempt}")
                     FTP_success = True
                     break
+
                 else:
-                    print("Unexpected FTP response")
-                    logging.error(f"Unexpected FTP response: {resp1}, {resp2}")
+                    if resp1.startswith('226') and resp2.startswith('226'):
+                        print(f"FTP- Image and JSON Upload Successful on attempt {attempt}")
+                        logging.info(f"FTP- Image and JSON Upload Successful on attempt {attempt}")
+                        FTP_success = True
+                        break
+                    else:
+                        print("Unexpected FTP response")
+                        logging.error(f"Unexpected FTP response: {resp1}, {resp2}")
 
 
-        except error_perm as e:
-            print(f"Upload Failed {type(e).__name__}: {e}")
-            logging.error(f"Upload failed: {type(e).__name__}: {e}")
-        except Exception as e:
-            print(f"Upload Failed {type(e).__name__}: {e}")
-            logging.error(f"Upload failed: {type(e).__name__}: {e}")
+            except error_perm as e:
+                print(f"Upload Failed {type(e).__name__}: {e}")
+                logging.error(f"Upload failed: {type(e).__name__}: {e}")
+            except Exception as e:
+                print(f"Upload Failed {type(e).__name__}: {e}")
+                logging.error(f"Upload failed: {type(e).__name__}: {e}")
 
-        if attempt < MAX_RETRIES:
-            time.sleep(RETRY_DELAY)
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_DELAY)
 
-
-    # Upload image with retries
-    HTML_success = False
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            with open(OUTPUT_IMAGE_PATH, 'rb') as f:
-                response = requests.post(UPLOAD_URL,
+        # Upload image with retries
+        HTML_success = False
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                with open(OUTPUT_IMAGE_PATH, 'rb') as f:
+                    response = requests.post(UPLOAD_URL,
 
                                          data={
                                              "secret": config.get("secret", "GeiseitoFi"),
@@ -742,33 +744,33 @@ try:
 
                                         timeout=(20,180))
                 
-            if response.status_code == 200:
-                print (f"HTML- Image Upload successful on attempt {attempt}")
-                logging.info(f"HTML- Image Upload successful on attempt {attempt}")
-                HTML_success = True
+                if response.status_code == 200:
+                    print (f"HTML- Image Upload successful on attempt {attempt}")
+                    logging.info(f"HTML- Image Upload successful on attempt {attempt}")
+                    HTML_success = True
 
-                break
+                    break
 
-            else:
-                logging.error(f"Upload attempt {attempt} failed, HTTP status:{response.status_code}")
-                print(f"Upload attempt {attempt} failed, HTTP status:{response.status_code}")
-        except Exception as e:
-                logging.error(f"Upload attempt {attempt} raised exception: {e}")
-                print(f"Upload attempt {attempt} raised exception: {e}")
+                else:
+                    logging.error(f"Upload attempt {attempt} failed, HTTP status:{response.status_code}")
+                    print(f"Upload attempt {attempt} failed, HTTP status:{response.status_code}")
+            except Exception as e:
+                    logging.error(f"Upload attempt {attempt} raised exception: {e}")
+                    print(f"Upload attempt {attempt} raised exception: {e}")
 
-        if attempt < MAX_RETRIES:
-            time.sleep(RETRY_DELAY)
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_DELAY)
 
-    if not HTML_success and not FTP_success:
-        logging.error(f"All HTML and {config.get('protocol', 'ftp').upper()} upload attempts failed. SHUTTING DOWN")
-        keep_last_two_sessions()   
-        safeShutdown("All HTML and FTP upload attempts failed")
+        if not HTML_success and not FTP_success:
+            logging.error(f"All HTML and {config.get('protocol', 'ftp').upper()} upload attempts failed. SHUTTING DOWN")
+            keep_last_two_sessions()   
+            safeShutdown("All HTML and FTP upload attempts failed")
 
-    elif not HTML_success:
-        logging.error("All HTML upload attempts failed.")
+        elif not HTML_success:
+            logging.error("All HTML upload attempts failed.")
 
-    elif not FTP_success:
-        logging.error(f"All {config.get('protocol', 'ftp').upper()} upload attempts failed.")
+        elif not FTP_success:
+            logging.error(f"All {config.get('protocol', 'ftp').upper()} upload attempts failed.")
 
 
     if newFrameRate is not None and newFrameRate != config.get("frameRate"):
@@ -789,7 +791,7 @@ try:
         time.sleep(0.1)
 
     GPIO.output(SIGNAL_TO_ESP32, GPIO.LOW)
-    print("Signaled ESP32 that image was sent.")
+    print("Signaled ESP32 that data was sent.")
 
     # Wait for shutdown
     print("Waiting for shutdown signal from ESP32")

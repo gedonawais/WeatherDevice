@@ -73,6 +73,28 @@ def fetch_meta():
     return meta
 
 
+def is_update_targeted_for_device(meta, config):
+    target_device = str(meta.get("target_device", "all")).strip()
+    target_type = str(meta.get("target_type", "")).strip().lower()
+    device_id = str(config.get("deviceID", "")).strip()
+
+    if not target_type:
+        target_type = "all" if target_device == "all" else "single"
+
+    logOTA(f"OTA target_type: {target_type}")
+    logOTA(f"OTA target_device: {target_device}")
+    logOTA(f"Current deviceID: {device_id}")
+
+    if target_type == "all" or target_device == "all":
+        return True
+
+    if not device_id:
+        logOTA("Device has no deviceID, cannot match targeted OTA")
+        return False
+
+    return device_id == target_device
+
+
 def get_remote_file_info(url, timeout=30):
     req = Request(url, method="HEAD")
     with urlopen(req, timeout=timeout) as response:
@@ -390,6 +412,10 @@ def check_and_download_ota(config):
 
         logOTA(f"Remote version: {remote_version}")
 
+        if not is_update_targeted_for_device(meta, config):
+            upload_ota_status(config, "no_update", "No update targeted for this device", remote_version)
+            return "no_update"
+
         if not zip_url:
             upload_ota_status(config, "failed", "No ZIP URL found in metadata", remote_version)
             return "failed"
@@ -413,7 +439,9 @@ def check_and_download_ota(config):
             "version": remote_version,
             "sha256": zip_sha256,
             "url": zip_url,
-            "downloaded_at": time.strftime("%Y-%m-%dT%H:%M:%S")
+            "downloaded_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "target_device": str(meta.get("target_device", "all")).strip(),
+            "target_type": str(meta.get("target_type", "")).strip().lower()
         })
 
         upload_ota_status(config, "pending_update", "Update downloaded and pending install", remote_version)

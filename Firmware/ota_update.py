@@ -27,10 +27,12 @@ PENDING_META = PENDING_DIR / "pending_meta.json"
 
 
 def logOTA(message):
-    print(message)
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    line = f"[{timestamp}] {message}"
+    print(line)
     try:
         with open(OTA_LOG_PATH, "a") as f:
-            f.write(message + "\n")
+            f.write(line + "\n")
     except Exception:
         pass
 
@@ -38,7 +40,7 @@ def logOTA(message):
 def clear_ota_log():
     try:
         with open(OTA_LOG_PATH, "w") as f:
-            f.write("=== OTA SESSION START ===\n")
+            f.write(f"=== OTA SESSION START [{time.strftime('%Y-%m-%d %H:%M:%S')}] ===\n")
     except Exception:
         pass
 
@@ -399,7 +401,7 @@ def check_and_download_ota(config):
             return "failed"
 
         if remote_version == local_version:
-            upload_ota_status(config, "no_update", "No update available", remote_version)
+            upload_ota_status(config, "success", "Device already on latest OTA version", remote_version)
             return "no_update"
 
         pending = load_pending_meta()

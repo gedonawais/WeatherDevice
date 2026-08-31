@@ -2,7 +2,7 @@ import RPi.GPIO as GPIO
 import time
 import subprocess
 import serial
-import logging
+
 
 
 PWRKEY_PIN = 17
@@ -64,7 +64,6 @@ def check_sim_at(timeout=10):
                 response = ser.read_all().decode(errors='ignore')
                 if "OK" in response and checkConnection():
                     print("SIM7070 is alive")
-                    log_no_time("SIM7070G is alive")
                     return True
 
         print("No response from SIM7070")
@@ -115,9 +114,9 @@ def checkConnection():
             elif csq < 21: status = "OK, CSQ is <21"
             elif csq < 31: status = "Good, CSQ is <31"
             else:           status = "Excellent"
-            log_no_time(f"CSQ:{csq} ({status})")
+            log_no_time(f"Signal quality: CSQ {csq} ({status})")
         else:
-            log_no_time("NO Data about CSQ")
+            log_no_time("No CSQ data from SIM7070G")
         return True
     except Exception as e:
         print(f"checkConnection failed: {e}")
@@ -132,7 +131,6 @@ def ensure_serial_free():
 
 def start_ppp():
     print("Starting PPP...")
-    log_no_time("Starting PPP...")
     ppp_process = subprocess.Popen(
         ["sudo", "pppd", "call", "sim7070", "noauth", "nodetach"],
         stdout=subprocess.PIPE,
@@ -141,7 +139,6 @@ def start_ppp():
     # Wait until interface is up
     for _ in range(60):
         if "ppp0" in subprocess.getoutput("ifconfig"):
-            log_no_time("ppp0 is up!")
             ensure_dns()
             return ppp_process
         time.sleep(1)
@@ -166,14 +163,14 @@ def init_connection():
         ppp = start_ppp()
         if ppp:
             print("PPP connection established")
-            log_no_time("PPP connection established!")
+            log_no_time("PPP connection established")
             return ppp
         else:
-            print("PPP failed, sending CFUN reset before retrying,,,")
-            log_no_time("PPP failed, sending CFUN reset before retrying...")
+            print("PPP failed, resetting SIM7070G before retry")
+            log_no_time("PPP failed, resetting SIM7070G before retry")
             reset_sim7070()
 
-    print("All PPP attempts failed,aborting...")
+    print("All PPP attempts failed, aborting...")
     log_no_time("All PPP attempts failed, aborting.")
     return None
 

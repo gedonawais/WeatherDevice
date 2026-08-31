@@ -59,8 +59,7 @@ def log_no_time(message, log_path = LOG_PATH):
 
 
 def mark_session_start():
-    with open(LOG_PATH, "a") as f:
-        f.write(f"=== SESSION START ===\n")
+    log_no_time(f"=== SESSION START ===")
 
 
 def get_logs():
@@ -483,7 +482,6 @@ def upload_low_battery_status(config, battery_value):
 def fix_dns():
     try:
         socket.gethostbyname("emea-edu.com")
-        log_no_time("DNS already working")
         return
     except Exception:
         pass
@@ -508,7 +506,7 @@ mark_session_start()
 log_firmware_version()
 config = load_config()
 ota_apply_result = ota_update.apply_pending_ota(config)
-log_no_time(f"Pending OTA apply result: {ota_apply_result}")
+log_no_time(f"Pending OTA result: {ota_apply_result}")
 
 
 try:
@@ -525,10 +523,10 @@ try:
 
         elif is_low_battery(BatteryData):
             lowBatteryDetected = True
-            log_no_time(f"Battery: {BatteryData}! Low Battery Detected. Skipping Uploads and Shutting Down")
+            log_no_time(f"Low battery detected: {BatteryData} V")
 
         else:
-            log_no_time(f"Battery: {BatteryData}! Safe Battery Levels are 13V - 9V")
+            log_no_time(f"Battery voltage: {BatteryData} V")
 
         time.sleep(1)
 
@@ -536,32 +534,31 @@ try:
         if config_is_valid(config):
             uart.send("SEND CONFIG\n")
         else:
-            print("Invalid config, requesting new config from ESP32")
-            log_no_time("Invalid config, requesting new config from ESP32")
+            log_no_time("Saved config invalid, requesting config from ESP32")
             uart.send("SEND CONFIG FORCED\n")
         
         config_data = wait_for_uart(uart)
 
         if config_data is None:
-            log_no_time("No response from ESP about Config")
+            log_no_time("No config response from ESP32, using saved config")
             config = load_config()
 
         elif config_data == "NO NEW CONFIG":
-            log_no_time("No new config data")
-            print ("No new config data")
             config = load_config()
         else:
             config = receive_and_save_config(config_data)
             uart.send("CONFIG SAVED\n")
-            log_no_time ("Config received and saved")
+            log_no_time ("Config updated from ESP32")
         
         #------------------ Send Frame Rate to ESP32 -----------------
         uart.send(f"SET FRAMERATE {config.get('frameRate')}\n")
         ack = wait_for_uart(uart)
         if ack == "FRAMERATE UPDATED":
-            log_no_time(f"Frame rate {config.get('frameRate')} sent to ESP32 successfully")
+            log_no_time(f"Frame rate synced to ESP32: {config.get('frameRate')} min")
+        elif ack == "FRAMERATE IDENTICAL TO SAVED FRAME RATE":
+            log_no_time(f"Frame rate unchanged on ESP32: {config.get('frameRate')} min")
         else:
-            log_no_time(f"Failed to send frame rate to ESP32. Response: {ack}")
+            log_no_time(f"Unexpected ESP32 frame rate response: {ack}")
 
         
         uart.close()
@@ -577,8 +574,7 @@ try:
     #ppp_process = sim_ppp.init_connection()
     ppp_process = True
     if ppp_process is None:
-        log_no_time("No PPP connection. Shutting down")
-        print("PPP connection failed. Shutting Down")
+        log_no_time("PPP connection failed.")
         keep_last_two_sessions()
         safeShutdown("PPP connection failed")
     else:
@@ -682,19 +678,16 @@ try:
         json_name = f"json_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
 
         logging.info(
-        f"FTP config: protocol={config.get('protocol')}, "
+        f"Upload target: protocol={config.get('protocol')}, "
         f"host={config.get('ftpHost')}, "
         f"port={config.get('ftpPort')}, "
-        f"user={config.get('ftpUser')}, "
         f"path={config.get('ftpPath')}"
         )
 
         for attempt in range(1, MAX_RETRIES + 1):
             try:
-                logging.info(f"Uploading image via {config.get('protocol', 'ftp')}: images/{nameImage}")
+                logging.info(f"Uploading image and metadata via {config.get('protocol', 'ftp').upper()}")
                 resp1 = upload_file(config, OUTPUT_IMAGE_PATH, f'images/{nameImage}')
-
-                logging.info(f"Uploading json via {config.get('protocol', 'ftp')}: json/{json_name}")
                 resp2 = upload_file(config, PIPELINE_JSON, f'json/{json_name}')
 
                 if config.get("protocol", "ftp").lower() == "sftp":
@@ -802,8 +795,8 @@ try:
         if GPIO.input(SHUTDOWN_FROM_ESP32) == GPIO.HIGH:
             time.sleep(1)
             print("Got signal from ESP32 for shutdown")
-            logging.info("Got Signal from ESP32 after sending Image,Uploading Logs and Going to SHUT DOWN")
-            logging.info("===================================================================================\n")
+            logging.info("Shutdown requested by ESP32 after successful upload")
+            logging.info("=== SESSION END ===")
             uploadLogs(config)
 
             #Close ppp connection

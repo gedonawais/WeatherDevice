@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 import requests
 
-BASE_URL = "https://emea-edu.com/cameraDashboard/OTA_Updates"
+META_URL = "https://emea-edu.com/cameraDashboard/ota_meta.json"
 UPLOAD_URL = "https://emea-edu.com/cameraDashboard/upload.php"
 
 BASE_DIR = Path("/home/WeatherDevice/Firmware")
@@ -65,32 +65,12 @@ def write_local_version(version):
     logOTA(f"Saved new local version: {version}")
 
 
-def fetch_json(url):
-    logOTA(f"Fetching OTA metadata from: {url}")
-    with urlopen(url, timeout=30) as response:
+def fetch_meta():
+    logOTA(f"Fetching OTA metadata from: {META_URL}")
+    with urlopen(META_URL, timeout=30) as response:
         meta = json.loads(response.read().decode("utf-8"))
     logOTA(f"Remote metadata: {meta}")
     return meta
-
-
-def fetch_meta_for_device(config):
-    device_id = str(config.get("deviceID", "")).strip()
-
-    if device_id:
-        device_meta_url = f"{BASE_URL}/{device_id}/meta.json"
-        try:
-            logOTA(f"Trying device-specific OTA metadata: {device_meta_url}")
-            return fetch_json(device_meta_url)
-        except Exception as e:
-            logOTA(f"No device-specific OTA metadata found: {type(e).__name__}: {e}")
-
-    global_meta_url = f"{BASE_URL}/all/meta.json"
-    try:
-        logOTA(f"Falling back to global OTA metadata: {global_meta_url}")
-        return fetch_json(global_meta_url)
-    except Exception as e:
-        logOTA(f"No global OTA metadata found: {type(e).__name__}: {e}")
-        return None
 
 
 def get_remote_file_info(url, timeout=30):
@@ -402,13 +382,7 @@ def check_and_download_ota(config):
 
     try:
         logOTA("Starting OTA update check...")
-        meta = fetch_meta_for_device(config)
-
-        if not meta:
-            logOTA("No OTA metadata found for this device and no global OTA found")
-            upload_ota_status(config, "no_update", "No OTA update available")
-            return "no_update"
-
+        meta = fetch_meta()
         remote_version = str(meta.get("version", "0")).strip()
         zip_url = str(meta.get("url", "")).strip()
         zip_sha256 = str(meta.get("sha256", "")).strip().lower()

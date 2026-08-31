@@ -574,7 +574,8 @@ try:
 
 
     #------------------ Initialize PPP Connection -----------------
-    ppp_process = sim_ppp.init_connection()
+    #ppp_process = sim_ppp.init_connection()
+    ppp_process = True
     if ppp_process is None:
         log_no_time("No PPP connection. Shutting down")
         print("PPP connection failed. Shutting Down")

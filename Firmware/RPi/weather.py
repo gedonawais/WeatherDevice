@@ -571,8 +571,7 @@ try:
 
 
     #------------------ Initialize PPP Connection -----------------
-    #ppp_process = sim_ppp.init_connection()
-    ppp_process = True
+    ppp_process = sim_ppp.init_connection()
     if ppp_process is None:
         log_no_time("PPP connection failed.")
         keep_last_two_sessions()

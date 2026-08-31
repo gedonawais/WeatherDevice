@@ -292,7 +292,7 @@ void setup()
   Serial.print("Battery Voltage = "); Serial.println(Vbat);
 
 
-  if (Vbat < 9.65 && Vbat >= 9.60)                                                  // Checking battery levels
+  if (Vbat <= 9.65 && Vbat >= 9.60)                                                  // Checking battery levels
   {
     Serial.println("Battery too low, Turning on RPi just to send low battery information");
     lowBattery = true;

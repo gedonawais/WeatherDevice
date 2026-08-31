@@ -776,7 +776,7 @@ try:
     GPIO.output(SIGNAL_TO_ESP32, GPIO.HIGH)
     print("Waiting for ESP32 to ACK....")
     ack_start = time.time()
-    ACK_TIMEOUT = 60  # seconds
+    ACK_TIMEOUT = 10  # seconds
 
     while GPIO.input(SHUTDOWN_FROM_ESP32) == GPIO.LOW:
         if time.time() -ack_start > ACK_TIMEOUT:
@@ -790,7 +790,7 @@ try:
     # Wait for shutdown
     print("Waiting for shutdown signal from ESP32")
     shutdown_wait_start = time.time()
-    SHUTDOWN_WAIT_TIMEOUT = 60  # seconds
+    SHUTDOWN_WAIT_TIMEOUT = 10  # seconds
     while True:
         if GPIO.input(SHUTDOWN_FROM_ESP32) == GPIO.HIGH:
             time.sleep(1)

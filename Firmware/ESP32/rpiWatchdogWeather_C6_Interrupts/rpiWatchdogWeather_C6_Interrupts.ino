@@ -509,7 +509,7 @@ void shutdownAndSleep(String reason)
 
   if (lowBattery)
   {
-    Serial.print("Low Battery.Sending Data to Server and  Sleeping for ")
+    Serial.print("Low Battery.Sending Data to Server and  Sleeping for ");
     Serial.println(SLEEP_TIME_BATTERY_DIE);
     esp_sleep_enable_timer_wakeup(SLEEP_TIME_BATTERY_DIE);
     delay(100);
